@@ -15,7 +15,7 @@ dialog --no-cancel --inputbox "Enter the drive you want do install Arch on.\n\n$
 
 dialog --defaultno --title "Time Zone select" --yesno "Do you want use the default time zone(Europe/Zurich)?.\n\nPress no for select your own time zone"  10 60 && echo "Europe/Zurich" > tz.tmp || tzselect > tz.tmp
 
-dialog --no-cancel --inputbox "Enter swapsize in gb (only type in numbers)." 10 60 2>psize
+dialog --no-cancel --inputbox "Enter swapsize in gb (only type in numbers)." 10 60 2>swapsize
 
 SIZE=$(cat swapsize)
 DRIVE=$(cat drive)
