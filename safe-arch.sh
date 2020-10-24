@@ -83,7 +83,7 @@ mv drive /mnt
 read -p "Press any key to continue"
 mv comp /mnt/etc/hostname
 read -p "Press any key to continue"
-curl https://raw.githubusercontent.com/noahvogt/norisa/master/chroot.sh > /mnt/chroot.sh && arch-chroot /mnt bash chroot.sh && rm /mnt/chroot.sh
+curl https://raw.githubusercontent.com/noahvogt/norisa/main/chroot.sh > /mnt/chroot.sh && arch-chroot /mnt bash chroot.sh && rm /mnt/chroot.sh
 read -p "Press any key to continue"
 
 dialog --defaultno --title "Final Qs" --yesno "Reboot computer?"  5 30 && reboot
