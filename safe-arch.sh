@@ -11,7 +11,11 @@ dialog --defaultno --title "WARNING!" --yesno "Do only run this script if you're
 
 dialog --no-cancel --inputbox "Enter the hostname." 10 60 2>comp
 
-dialog --no-cancel --inputbox "Enter the drive you want do install Arch on.\n\n$(lsblk -d | sed 's/0 disk/0 disk\\n/;s/POINT/POINT\\n/')" 10 60 2>drive
+clear
+lsblk -d | sed 's/0 disk/0 disk\\n/;s/POINT/POINT\\n/'
+read -p "Press any key to continue"
+
+dialog --no-cancel --inputbox "Enter the drive you want do install Arch on." 10 60 2>drive
 
 dialog --defaultno --title "Time Zone select" --yesno "Do you want use the default time zone(Europe/Zurich)?.\n\nPress no for select your own time zone"  10 60 && echo "Europe/Zurich" > tz.tmp || tzselect > tz.tmp
 
@@ -25,8 +29,10 @@ timedatectl set-ntp true
 read -p "Press any key to continue"
 
 cat <<EOF | fdisk /dev/${DRIVE}
+p
 g
 n
+
 
 +1024M
 t
@@ -38,12 +44,15 @@ n
 t
 2
 19
+p
 n
+
 
 
 t
 3
 20
+p
 w
 EOF
 partprobe
