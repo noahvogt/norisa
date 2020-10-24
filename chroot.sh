@@ -28,5 +28,5 @@ systemctl start NetworkManager
 read -p "Press any key to continue"
 
 DRIVE=$(cat drive)
-pacman --noconfirm --needed -S grub && grub-install --target=i386-pc /dev/${DRIVE} && grub-mkconfig -o /boot/grub/grub.cfg
+pacman --noconfirm --needed -S grub && grub-install --target=i386-pc /dev/sda && grub-mkconfig -o /boot/grub/grub.cfg
 read -p "Press any key to continue"
