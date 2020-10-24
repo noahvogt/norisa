@@ -28,7 +28,7 @@ read -p "Press any key to continue"
 timedatectl set-ntp true
 read -p "Press any key to continue"
 
-cat <<EOF | fdisk /dev/${DRIVE}
+cat <<EOF | fdisk -W always /dev/${DRIVE}
 p
 g
 n
@@ -51,7 +51,7 @@ n
 
 t
 3
-24
+20
 p
 w
 EOF
@@ -70,7 +70,7 @@ read -p "Press any key to continue"
 pacman -Sy --noconfirm archlinux-keyring
 read -p "Press any key to continue"
 
-pacstrap /mnt base base-devel
+pacstrap /mnt base base-devel linux linux-firmware networkmanager rsync
 read -p "Press any key to continue"
 
 genfstab -U /mnt >> /mnt/etc/fstab
@@ -83,7 +83,7 @@ mv drive /mnt
 read -p "Press any key to continue"
 mv comp /mnt/etc/hostname
 read -p "Press any key to continue"
-curl https://raw.githubusercontent.com/noahvogt/norisa/main/chroot.sh > /mnt/chroot.sh && arch-chroot /mnt bash chroot.sh && rm /mnt/chroot.sh
+curl https://raw.githubusercontent.com/noahvogt/norisa/main/testing/safe-chroot.sh > /mnt/chroot.sh && arch-chroot /mnt bash chroot.sh && rm /mnt/chroot.sh
 read -p "Press any key to continue"
 
 dialog --defaultno --title "Final Qs" --yesno "Reboot computer?"  5 30 && reboot
