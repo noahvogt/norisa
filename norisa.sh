@@ -55,11 +55,26 @@ git clone https://github.com/noahvogt/dwmblocks.git
 cd dwmblocks || exit
 make clean install
 
+# install vim-plug
+cd /home/"$username"/.build || exit
+curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+
 # make user to owner of ~/.build
 chown -R "$username":wheel home/"$username"/.build
 
 # download packages from the official repo
-pacman -S --noconfirm xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot picom xbindkeys jdk-openjdk dmenu geogebra shellcheck vim firefox syncthing ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip unrar python mupdf mediainfo highlight pulseaudio-alsa pulsemixer pamixer  ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick thunderbird gimp xorg-setxkbmap wavemon cmus texlive-most dash neofetch htop wireless_tools alsa-utils acpi
+pacman -S --noconfirm xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot picom xbindkeys jdk-openjdk dmenu geogebra shellcheck vim firefox syncthing ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip unrar python mupdf mediainfo highlight pulseaudio-alsa pulsemixer pamixer  ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick thunderbird gimp xorg-setxkbmap wavemon cmus texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip unrar
 
 # install aur packages
-sudo -u "$username" yay -S --noconfirm betterlockscreen simple-mtpfs tibasicc-git xflux dashbinsh
+sudo -u "$username" yay -S --noconfirm betterlockscreen simple-mtpfs tibasicc-git xflux dashbinsh devour
+
+# enable tap to click
+[ ! -f /etc/X11/xorg.conf.d/40-libinput.conf ] && printf 'Section "InputClass"
+    Identifier "libinput touchpad catchall"
+    MatchIsTouchpad "on"
+    MatchDevicePath "/dev/input/event*"
+    Driver "libinput"
+    # Enable left mouse button by tapping
+    Option "Tapping" "on"
+EndSection' > /etc/X11/xorg.conf.d/40-libinput.conf
