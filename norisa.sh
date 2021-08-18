@@ -22,7 +22,7 @@ cd /home/"$username"/.local/src || exit
 pacman -S --noconfirm asp bat devtools
 curl -sO https://aur.archlinux.org/cgit/aur.git/snapshot/paru.tar.gz &&
 tar xvf paru.tar.gz
-cd .. && chown -R "$username":wheel /home/"$username"/.local/src/ && cd .local/src || exit
+cd /home/"$username" && chown -R "$username":wheel /home/"$username"/.local/src/ && cd .local/src || exit
 cd paru || exit
 sudo -u "$username" makepkg --noconfirm -si
 
