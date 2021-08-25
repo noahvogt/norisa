@@ -31,30 +31,30 @@ sudo -u "$username" paru -S --noconfirm libxft-bgra-git
 
 # clone dotfiles repo
 cd /home/"$username"/.local/src || exit
-git clone git@github.com:noahvogt/dotfiles.git
+git clone https://github.com:noahvogt/dotfiles.git
 cp -f dotfiles/.* /home/"$username" /root
 
 # build dwm
 cd /home/"$username"/.local/src || exit
-git clone git@github.com:noahvogt/dwm.git
+git clone https://github.com:noahvogt/dwm.git
 cd dwm || exit
 make clean install
 
 # build st
 cd /home/"$username"/.local/src || exit
-git clone git@github.com:noahvogt/st.git
+git clone https://github.com:noahvogt/st.git
 cd st || exit
 make clean install
 
 # build dwmblocks
 cd /home/"$username"/.local/src || exit
-git clone git@github.com:noahvogt/dwmblocks.git
+git clone https://github.com:noahvogt/dwmblocks.git
 cd dwmblocks || exit
 make clean install
 
 # build dmenu
 cd /home/"$username"/.local/src || exit
-git clone git@github.com:noahvogt/dmenu.git
+git clone https://github.com:noahvogt/dmenu.git
 cd dmenu || exit
 make clean install
 
@@ -63,7 +63,7 @@ chown -R "$username":wheel /home/"$username"/
 chown -R "$username":wheel /mnt/
 
 # download packages from the official repo
-pacman -S --noconfirm xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot picom xbindkeys jdk-openjdk geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip unrar python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer  ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick thunderbird gimp xorg-setxkbmap wavemon cmus texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip unrar libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools
+pacman -S --noconfirm xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot picom xbindkeys jdk-openjdk geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip unrar python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer  ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick thunderbird gimp xorg-setxkbmap wavemon cmus texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip unrar libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools wget nomacs
 
 # install aur packages
 sudo -u "$username" paru -S --noconfirm betterlockscreen simple-mtpfs tibasicc-git redshift dashbinsh devour plymouth vim-plug librewolf-bin lf-bin brave-bin
