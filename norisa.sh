@@ -29,32 +29,38 @@ sudo -u "$username" makepkg --noconfirm -si
 pacman -S --noconfirm xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot 
 sudo -u "$username" paru -S --noconfirm libxft-bgra-git
 
+mkdir -p /home/"$username"/dox /home/"$username"/pix /home/"$username"/dl
+mkdir -p /home/"$username"/vids /home/"$username"/.local/share
+mkdir -p /home/"$username"/.local/bin /home/"$username"/.config
+
 # clone dotfiles repo
 cd /home/"$username"/.local/src || exit
-git clone https://github.com:noahvogt/dotfiles.git
-cp -f dotfiles/.* /home/"$username" /root
+git clone https://github.com/noahvogt/dotfiles.git
+cd dotfiles || exit
+git checkout stow
+/home/"$username"/.local/src/dotfiles/apply-dotfiles
 
 # build dwm
 cd /home/"$username"/.local/src || exit
-git clone https://github.com:noahvogt/dwm.git
+git clone https://github.com/noahvogt/dwm.git
 cd dwm || exit
 make clean install
 
 # build st
 cd /home/"$username"/.local/src || exit
-git clone https://github.com:noahvogt/st.git
+git clone https://github.com/noahvogt/st.git
 cd st || exit
 make clean install
 
 # build dwmblocks
 cd /home/"$username"/.local/src || exit
-git clone https://github.com:noahvogt/dwmblocks.git
+git clone https://github.com/noahvogt/dwmblocks.git
 cd dwmblocks || exit
 make clean install
 
 # build dmenu
 cd /home/"$username"/.local/src || exit
-git clone https://github.com:noahvogt/dmenu.git
+git clone https://github.com/noahvogt/dmenu.git
 cd dmenu || exit
 make clean install
 
@@ -63,10 +69,10 @@ chown -R "$username":wheel /home/"$username"/
 chown -R "$username":wheel /mnt/
 
 # download packages from the official repo
-pacman -S --noconfirm xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot picom xbindkeys jdk-openjdk geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip unrar python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer  ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick thunderbird gimp xorg-setxkbmap wavemon cmus texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip unrar libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools wget nomacs
+pacman -S --noconfirm xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot picom xbindkeys jdk-openjdk geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip unrar python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer  ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip unrar libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools wget nomacs
 
 # install aur packages
-sudo -u "$username" paru -S --noconfirm betterlockscreen simple-mtpfs tibasicc-git redshift dashbinsh devour plymouth vim-plug librewolf-bin lf-bin brave-bin
+sudo -u "$username" paru -S --noconfirm betterlockscreen simple-mtpfs tibasicc-git redshift dashbinsh devour vim-plug lf-bin brave-bin
 
 # enable tap to click
 [ ! -f /etc/X11/xorg.conf.d/40-libinput.conf ] && printf 'Section "InputClass"
