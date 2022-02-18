@@ -33,8 +33,6 @@ p
 
 
 +${SIZE}G
-t
-2
 82
 n
 p
@@ -47,8 +45,13 @@ w
 EOF
 partprobe
 
-cryptsetup luksFormat --type luks1 /dev/${DRIVE}2
-cryptsetup open /dev/${DRIVE}2 cryptroot
+while true; do
+    cryptsetup luksFormat --type luks1 /dev/${DRIVE}2 && break
+done
+
+while true; do
+    cryptsetup open /dev/${DRIVE}2 cryptroot && break
+done
 
 yes | mkfs.ext4 /dev/mapper/cryptroot
 mount /dev/mapper/cryptroot /mnt

@@ -30,11 +30,13 @@ sed -i 's/FILES=()/FILES=(\/crypto_keyfile.bin)/' /etc/mkinitcpio.conf
 sed -i 's/block filesystems/block encrypt filesystems/' /etc/mkinitcpio.conf
 mkinitcpio -P
 
+pacman --noconfirm --needed -S grub
 sed -i "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"cryptdevice=\/dev\/${DRIVE}2:cryptroot\"/" /etc/default/grub
 sed -i 's/#GRUB_ENABLE_CRYPTODISK/GRUB_ENABLE_CRYPTODISK/' /etc/default/grub
 
 echo "swap /dev/${DRIVE}1 /dev/urandom swap,cipher=aes-cbc-essiv:sha256,size=256" >> /etc/crypttab
 
-pacman --noconfirm --needed -S grub
 grub-install --target=i386-pc /dev/${DRIVE} --recheck
 grub-mkconfig -o /boot/grub/grub.cfg
+
+rm drive tzfinal.tmp
