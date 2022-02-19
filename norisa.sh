@@ -38,8 +38,7 @@ if ! pacman -Q | grep -q paru; then
     rm /home/"$username"/.local/src/paru-bin.tar.gz
 fi
 
-# install some dependencies
-pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot xf86-video-modesetting xf86-video-vesa xf86-video-fbdev
+# need to use piped yes as --noconfirm doesn't work with package conflicts
 yes | sudo -u "$username" paru -S --needed libxft-bgra
 
 # clone dotfiles repo
@@ -47,6 +46,12 @@ cd /home/"$username"/.local/src || exit
 git clone https://github.com/noahvogt/dotfiles.git
 cd dotfiles || exit
 sudo -u "$username" /home/"$username"/.local/src/dotfiles/apply-dotfiles
+
+# download packages from the official repos
+pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot xbindkeys  xf86-video-modesetting xf86-video-vesa xf86-video-fbdev libxinerama jdk-openjdk geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer  ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools wget nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter
+
+# install aur packages
+sudo -u "$username" paru -S --noconfirm --needed betterlockscreen simple-mtpfs tibasicc-git redshift dashbinsh devour vim-plug lf-bin brave-bin picom-ibhagwan-git doasedit
 
 # build dwm
 cd /home/"$username"/.local/src || exit
@@ -72,19 +77,17 @@ git clone https://github.com/noahvogt/dmenu.git
 cd dmenu || exit
 make clean install
 
-# make user to owner of ~/ and /mnt/
-chown -R "$username":users /home/"$username"/
-chown -R "$username":users /mnt/
-
-# download packages from the official repos
-pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot xbindkeys jdk-openjdk geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer  ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools wget nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter
-
-# install aur packages
-sudo -u "$username" paru -S --noconfirm --needed betterlockscreen simple-mtpfs tibasicc-git redshift dashbinsh devour vim-plug lf-bin brave-bin picom-ibhagwan-git doasedit
-
 # set global zshenv
 mkdir -p /etc/zsh
 echo "export ZDOTDIR=\$HOME/.config/zsh" > /etc/zsh/zshenv
+
+# make initial history file
+mkdir -p /home/"$username"/.cache/zsh
+touch /home/"$username"/.cache/zsh/history
+
+# make user to owner of ~/ and /mnt/
+chown -R "$username":users /home/"$username"/
+chown -R "$username":users /mnt/
 
 # change shell to zsh
 while true; do
