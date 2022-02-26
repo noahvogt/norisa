@@ -1,9 +1,32 @@
 #!/bin/bash
 
 # install git, vim, opendoas and (base-devel minus sudo)
-pacman -Sy --noconfirm --needed git vim opendoas autoconf automake binutils bison fakeroot file findutils flex gawk gcc gettext grep groff gzip libtool m4 make pacman patch pkgconf sed texinfo which || { printf "Error at script start:\n\nAre you sure you're running this as the root user?\n\t(Tip: run 'whoami' to check)\n\nAre you sure you have an internet connection?\n\t(Tip: run 'ip a' to check)\n"; exit; }
+echo -e "\e[0;30;34mInstalling some packages ...\e[0m"
+pacman -Sy --noconfirm --needed git vim opendoas autoconf automake binutils bison fakeroot file findutils flex gawk gcc gettext grep groff gzip libtool m4 make pacman patch pkgconf sed texinfo which || { echo -e "\e[0;30;101m Error at script start:\n\nAre you sure you're running this as the root user?\n\t(Tip: run 'whoami' to check)\n\nAre you sure you have an internet connection?\n\t(Tip: run 'ip a' to check)\n\e[0m"; exit 1; }
+
+pacman_error_exit() {
+    echo -e "\e[0;30;101m Error: Pacman command was not successfull. Exiting ...\e[0m"
+    exit 1
+}
+
+compile_error_exit() {
+    echo -e "\e[0;30;101m Error: Compilation command was not successfull. Exiting ...\e[0m"
+    exit 1
+}
+
+cd_into() {
+    cd "$1" || cd_error_exit "$1"
+}
+
+cd_error_exit() {
+    echo -e "\e[0;30;46m Current working directory: \e[0m"
+    pwd
+    echo -e "\e[0;30;101m Error: Could not change into '$1'. Exiting ...\e[0m"
+    exit 1
+}
 
 setup_temporary_doas() {
+    echo -e "\e[0;30;34mSetting up temporary doas config ...\e[0m"
     printf "permit nopass :wheel
 permit nopass root as $username\n" > /etc/doas.conf
     chown -c root:root /etc/doas.conf
@@ -11,6 +34,7 @@ permit nopass root as $username\n" > /etc/doas.conf
 }
 
 setup_final_doas() {
+    echo -e "\e[0;30;34mSetting up final doas config ...\e[0m"
     printf "permit persist :wheel
 permit nopass root as $username\n" > /etc/doas.conf
     chown -c root:root /etc/doas.conf
@@ -18,7 +42,8 @@ permit nopass root as $username\n" > /etc/doas.conf
 }
 
 create_new_user() {
-    read -rp "What is your desired username >>> " username
+    echo -e "\e[0;30;42m Enter your desired username \e[0m"
+    read -rp " >>> " username
     useradd -m -g users -G wheel "$username"
     while true; do
         passwd "$username" && break
@@ -26,19 +51,21 @@ create_new_user() {
 }
 
 choose_user() {
-    echo "Available users:"
+    echo -e "\e[0;30;46m Available users: \e[0m"
     ls /home
     while true; do
-    read -rp "Enter in your chosen user >>> " username
+    echo -e "\e[0;30;42m Enter in your chosen user \e[0m"
+    read -rp " >>> " username
         ls /home/ | grep -q "^$username$" && break
     done
 }
 
 # ask for new user if /home is not empty
 if [ "$(ls -A /home)" ]; then
-    echo "/home/ not empty, human users already available"
+    echo -e "\e[0;30;46m /home/ not empty, human users already available \e[0m"
     while true; do
-        read -rp "Do you want to create a new user? [y/n] " want_new_user
+        echo -e "\e[0;30;42m Do you want to create a new user? [y/n] \e[0m"
+        read -rp " >>> " want_new_user
         if echo "$want_new_user" | grep -q "y\|Y"; then
             create_new_user; break
         elif echo "$want_new_user" | grep -q "n\|N"; then
@@ -47,98 +74,104 @@ if [ "$(ls -A /home)" ]; then
     done
 fi
 
-# create ~/ folders
-mkdir -p /home/"$username"/dox /home/"$username"/pix /home/"$username"/dl
-mkdir -p /home/"$username"/vids /home/"$username"/mus
-mkdir -p /home/"$username"/.local/bin /home/"$username"/.config
-mkdir -p /home/"$username"/.local/share /home/"$username"/.local/src
+# create ~/ directories
+echo -e "\e[0;30;34mCreating ~/ directories ...\e[0m"
+mkdir -vp /home/"$username"/dox /home/"$username"/pix /home/"$username"/dl
+mkdir -vp /home/"$username"/vids /home/"$username"/mus
+mkdir -vp /home/"$username"/.local/bin /home/"$username"/.config
+mkdir -vp /home/"$username"/.local/share /home/"$username"/.local/src
 
+echo -e "\e[0;30;34mChanging ownership of /home/$username ...\e[0m"
 chown -R "$username":users /home/"$username"/* /home/"$username"/.*
 
 setup_temporary_doas
 
+
 # install aur helper (paru)
 if ! pacman -Q | grep -q paru; then
-    cd /home/"$username"/.local/src || exit
-    pacman -S --noconfirm --needed asp bat devtools
+    echo -e "\e[0;30;34mInstalling AUR helper (paru) ...\e[0m"
+    cd_into /home/"$username"/.local/src
+    pacman -S --noconfirm --needed asp bat devtools || pacman_error_exit
     curl -sO https://aur.archlinux.org/cgit/aur.git/snapshot/paru-bin.tar.gz &&
     tar xvf paru-bin.tar.gz
-    cd /home/"$username" && chown -R "$username":wheel /home/"$username"/.local/src/ && cd .local/src || exit
-    cd paru-bin || exit
-    doas -u "$username" makepkg --noconfirm -si
+    cd_into /home/"$username" && chown -R "$username":wheel /home/"$username"/.local/src/ && cd_into .local/src
+    cd_into paru-bin
+    doas -u "$username" makepkg --noconfirm -si || pacman_error_exit
     rm /home/"$username"/.local/src/paru-bin.tar.gz
 fi
 
 # need to use piped yes as --noconfirm doesn't work with package conflicts
 if ! pacman -Q | grep -q libxft-bgra; then
-    yes | doas -u "$username" paru -S --needed libxft-bgra
+    echo -e "\e[0;30;34mInstalling libxft-bgra ...\e[0m"
+    yes | doas -u "$username" paru -S --needed libxft-bgra || pacman_error_exit
 fi
 
 # fetch dotfiles repo + apply dotfiles
 if [ ! -d /home/"$username"/.local/src/dotfiles ]; then
-    cd /home/"$username"/.local/src || exit
+    echo -e "\e[0;30;34mFetching dotfiles ...\e[0m"
+    cd_into /home/"$username"/.local/src
     git clone https://github.com/noahvogt/dotfiles.git
 fi
-cd /home/"$username"/.local/src/dotfiles || exit
+c
+d_into /home/"$username"/.local/src/dotfiles
+echo -e "\e[0;30;34mApplying dotfiles ...\e[0m"
 doas -u "$username" /home/"$username"/.local/src/dotfiles/apply-dotfiles
 
 # download packages from the official repos
-pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot xbindkeys  xf86-video-modesetting xf86-video-vesa xf86-video-fbdev libxinerama jdk-openjdk geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer  ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools wget nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter
+echo -e "\e[0;30;34mInstalling packages from official repos ...\e[0m"
+pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot xbindkeys xf86-video-vesa xf86-video-fbdev libxinerama geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter tlp ccls || pacman_error_exit
 
 # install aur packages
-doas -u "$username" paru -S --noconfirm --needed betterlockscreen simple-mtpfs tibasicc-git redshift dashbinsh devour vim-plug lf-bin brave-bin picom-ibhagwan-git doasedit
+echo -e "\e[0;30;34mInstalling packages from AUR ...\e[0m"
+doas -u "$username" paru -S --noconfirm --needed betterlockscreen simple-mtpfs redshift dashbinsh devour vim-plug lf-bin brave-bin picom-ibhagwan-git doasedit jdk-openjdk-xdg openssh-dotconfig wget-xdg networkmanager-openvpn-xdg abook-configdir || pacman_error_exit
 
-# build dwm
-if [ ! -d /home/"$username"/.local/src/dwm ]; then
-    cd /home/"$username"/.local/src || exit
-    git clone https://github.com/noahvogt/dwm.git
-fi
-cd /home/"$username"/.local/src/dwm || exit
-make install
+suckless_build() {
+    if [ ! -d /home/"$username"/.local/src/"$1" ]; then
+        echo -e "\e[0;30;34mFetching "$1" ...\e[0m"
+        cd_into /home/"$username"/.local/src
+        git clone https://github.com/noahvogt/"$1".git
+    fi
 
-# build st
-if [ ! -d /home/"$username"/.local/src/st ]; then
-    cd /home/"$username"/.local/src || exit
-    git clone https://github.com/noahvogt/st.git
-fi
-cd /home/"$username"/.local/src/st || exit
-make install
+    cd_into /home/"$username"/.local/src/"$1"
 
-# build dwmblocks
-if [ ! -d /home/"$username"/.local/src/dwmblocks ]; then
-    cd /home/"$username"/.local/src || exit
-    git clone https://github.com/noahvogt/dwmblocks.git
-fi
-cd /home/"$username"/.local/src/dwmblocks || exit
-make install
+    if ! command -v "$1" > /dev/null; then
+        echo -e "\e[0;30;34mCompiling "$1" ...\e[0m"
+        make install || compile_error_exit
+    fi
+}
 
-# build dmenu
-if [ ! -d /home/"$username"/.local/src/dmenu ]; then
-    cd /home/"$username"/.local/src || exit
-    git clone https://github.com/noahvogt/dmenu.git
-fi
-cd /home/"$username"/.local/src/dmenu || exit
-make install
+suckless_build dwm
+suckless_build st
+suckless_build dwmblocks
+suckless_build dmenu
 
 # set global zshenv
-mkdir -p /etc/zsh
+echo -e "\e[0;30;34mSetting global zshenv ...\e[0m"
+mkdir -vp /etc/zsh
 echo "export ZDOTDIR=\$HOME/.config/zsh" > /etc/zsh/zshenv
 
 # make initial history file
-mkdir -p /home/"$username"/.cache/zsh
+echo -e "\e[0;30;34mSetting initial zsh history file ...\e[0m"
+mkdir -vp /home/"$username"/.cache/zsh
 [ -f /home/"$username"/.cache/zsh/history ] ||
     touch /home/"$username"/.cache/zsh/history
 
 # make user to owner of ~/ and /mnt/
+echo -e "\e[0;30;34mChanging ownership of /home/$username + /mnt ...\e[0m"
 chown -R "$username":users /home/"$username"/
 chown -R "$username":users /mnt/
 
 # change shell to zsh
-while true; do
-    doas -u "$username" chsh -s "$(which zsh)" && break
-done
+echo -e "\e[0;30;34mSetting default shell to $(which zsh)...\e[0m"
+if ! grep "^$username.*::/home/$username" /etc/passwd | sed 's/^.*://' | \
+    grep -q "^$(which zsh)$"; then
+    while true; do
+        doas -u "$username" chsh -s "$(which zsh)" && break
+    done
+fi
 
 # enable tap to click
+echo -e "\e[0;30;34mEnabling tap to click ...\e[0m"
 [ ! -f /etc/X11/xorg.conf.d/40-libinput.conf ] && printf 'Section "InputClass"
     Identifier "libinput touchpad catchall"
     MatchIsTouchpad "on"
@@ -151,5 +184,6 @@ EndSection' > /etc/X11/xorg.conf.d/40-libinput.conf
 setup_final_doas
 
 # cleanup
+echo -e "\e[0;30;34mCleaning up ...\e[0m"
 ls -A /home/"$username" | grep -q "\.bash" && rm /home/"$username"/.bash*
 ls -A /home/"$username" | grep -q "\.less" && rm /home/"$username"/.less*
