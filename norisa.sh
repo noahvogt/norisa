@@ -36,6 +36,8 @@ permit nopass root as $username\n" > /etc/doas.conf
 setup_final_doas() {
     echo -e "\e[0;30;34mSetting up final doas config ...\e[0m"
     printf "permit persist :wheel
+permit nopass $username as root cmd mount
+permit nopass $username as root cmd umount
 permit nopass root as $username\n" > /etc/doas.conf
     chown -c root:root /etc/doas.conf
     chmod -c 0400 /etc/doas.conf

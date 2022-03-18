@@ -68,5 +68,6 @@ mv drive /mnt
 mv comp /mnt/etc/hostname
 curl https://raw.githubusercontent.com/noahvogt/norisa/main/chroot.sh > /mnt/chroot.sh && arch-chroot /mnt bash chroot.sh && rm /mnt/chroot.sh
 
+curl https://raw.githubusercontent.com/noahvogt/norisa/main/norisa.sh > /mnt/norisa.sh && dialog --defaultno --title "NoRiSA" --yesno "Launch NoRiSA install script?"  6 30 && arch-chroot /mnt bash norisa.sh && rm /mnt/norisa.sh
 dialog --defaultno --title "Final Qs" --yesno "Return to chroot environment?"  6 30 && arch-chroot /mnt
 clear
