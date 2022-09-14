@@ -21,7 +21,7 @@ locale-gen
 pacman --noconfirm --needed -S networkmanager
 systemctl enable NetworkManager
 
-EFI=$(ls /sys/firmware/efi/efivars)
+ls /sys/firmware/efi/efivars && EFI=yes
 
 if [ "$EFI" = "yes" ]; then
     SWAP_LETTER="2"

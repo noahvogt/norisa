@@ -21,7 +21,7 @@ dialog --defaultno --title "Time Zone select" --yesno "Do you want use the defau
 
 dialog --no-cancel --inputbox "Enter swapsize in gb (only type in numbers)." 10 60 2>swapsize
 
-EFI=$(ls /sys/firmware/efi/efivars)
+ls /sys/firmware/efi/efivars && EFI=yes
 SIZE=$(cat swapsize)
 DRIVE=$(cat drive)
 PVALUE=$(echo "${DRIVE}" | grep "^nvme" | sed 's/.*[0-9]/p/')
@@ -31,8 +31,8 @@ timedatectl set-ntp true
 if [ "$EFI" = "yes" ]; then
     SWAP_LETTER="2"
     ROOT_LETTER="3"
-    kat <<EOF | fdisk -W always /dev/"${DRIVE}"
-o
+    cat <<EOF | fdisk -W always /dev/"${DRIVE}"
+g
 n
 p
 
