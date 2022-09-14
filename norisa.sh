@@ -121,11 +121,11 @@ doas -u "$username" /home/"$username"/.local/src/dotfiles/apply-dotfiles
 
 # download packages from the official repos
 echo -e "\e[0;30;34mInstalling packages from official repos ...\e[0m"
-pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot xbindkeys xf86-video-vesa xf86-video-fbdev libxinerama geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter tlp ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint || pacman_error_exit
+pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot xbindkeys xf86-video-vesa xf86-video-fbdev libxinerama geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter tlp ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint element-desktop tesseract-data-deu tesseract-data-eng || pacman_error_exit
 
 # install aur packages
 echo -e "\e[0;30;34mInstalling packages from AUR ...\e[0m"
-doas -u "$username" paru -S --noconfirm --needed betterlockscreen simple-mtpfs redshift dashbinsh devour vim-plug lf-bin brave-bin picom-ibhagwan-git doasedit jdk-openjdk-xdg openssh-dotconfig wget-xdg networkmanager-openvpn-xdg abook-configdir ungoogled-chromium-xdg-bin || pacman_error_exit
+doas -u "$username" paru -S --noconfirm --needed betterlockscreen simple-mtpfs redshift dashbinsh devour vim-plug lf-bin picom-jonaburg-fix doasedit jdk-openjdk-xdg openssh-dotconfig wget-xdg networkmanager-openvpn-xdg abook-configdir ungoogled-chromium-xdg-bin nerd-fonts-jetbrains-mono-160 electron-xdg-bin yarn-xdg-bin || pacman_error_exit
 
 suckless_build() {
     if [ ! -d /home/"$username"/.local/src/"$1" ]; then
@@ -142,7 +142,23 @@ suckless_build() {
     fi
 }
 
-suckless_build dwm
+dwm_build() {
+    if [ ! -d /home/"$username"/.local/src/"$1" ]; then
+        echo -e "\e[0;30;34mFetching "$1" ...\e[0m"
+        cd_into /home/"$username"/.local/src
+        git clone https://github.com/noahvogt/"$1".git --depth 1
+    fi
+
+    mv /home/"$username"/.local/src/"$1" /home/"$username"/.config
+    cd_into /home/"$username"/.config/"$1"
+
+    if ! command -v "$1" > /dev/null; then
+        echo -e "\e[0;30;34mCompiling "$1" ...\e[0m"
+        make install || compile_error_exit
+    fi
+}
+
+dwm_build chadwm
 suckless_build st
 suckless_build dwmblocks
 suckless_build dmenu
