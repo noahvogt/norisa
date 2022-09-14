@@ -13,7 +13,7 @@ dialog --no-cancel --inputbox "Enter the hostname." 10 60 2>comp
 
 clear
 lsblk -d | sed 's/0 disk/0 disk\\n/;s/POINT/POINT\\n/'
-read -p "Press any key to continue"
+read -rp "Press any key to continue"
 
 dialog --no-cancel --inputbox "Enter the drive you want do install Arch on." 10 60 2>drive
 
@@ -23,10 +23,11 @@ dialog --no-cancel --inputbox "Enter swapsize in gb (only type in numbers)." 10 
 
 SIZE=$(cat swapsize)
 DRIVE=$(cat drive)
+PVALUE=$(echo "${DRIVE}" | grep "^nvme" | sed 's/.*[0-9]/p/')
 
 timedatectl set-ntp true
 
-cat <<EOF | fdisk -W always /dev/${DRIVE}
+cat <<EOF | fdisk -W always /dev/"${DRIVE}"
 o
 n
 p
@@ -47,11 +48,11 @@ EOF
 partprobe
 
 while true; do
-    cryptsetup luksFormat --type luks1 /dev/${DRIVE}2 && break
+    cryptsetup luksFormat --type luks1 /dev/"${DRIVE}${PVALUE}2" && break
 done
 
 while true; do
-    cryptsetup open /dev/${DRIVE}2 cryptroot && break
+    cryptsetup open /dev/"${DRIVE}${PVALUE}2" cryptroot && break
 done
 
 yes | mkfs.ext4 /dev/mapper/cryptroot
