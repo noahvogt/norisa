@@ -21,13 +21,45 @@ dialog --defaultno --title "Time Zone select" --yesno "Do you want use the defau
 
 dialog --no-cancel --inputbox "Enter swapsize in gb (only type in numbers)." 10 60 2>swapsize
 
+EFI=$(ls /sys/firmware/efi/efivars)
 SIZE=$(cat swapsize)
 DRIVE=$(cat drive)
 PVALUE=$(echo "${DRIVE}" | grep "^nvme" | sed 's/.*[0-9]/p/')
 
 timedatectl set-ntp true
 
-cat <<EOF | fdisk -W always /dev/"${DRIVE}"
+if [ "$EFI" = "yes" ]; then
+    SWAP_LETTER="2"
+    ROOT_LETTER="3"
+    kat <<EOF | fdisk -W always /dev/"${DRIVE}"
+o
+n
+p
+
+
++1024M
+t
+1
+n
+p
+
+
++${SIZE}G
+t
+2
+19
+n
+
+
+
+w
+EOF
+mkfs.fat -F32 /dev/"${DRIVE}${PVALUE}1"
+
+else
+    cat <<EOF | fdisk -W always /dev/"${DRIVE}"
+    SWAP_LETTER="1"
+    ROOT_LETTER="2"
 o
 n
 p
@@ -45,14 +77,17 @@ a
 2
 w
 EOF
+fi
+
 partprobe
 
 while true; do
-    cryptsetup luksFormat --type luks1 /dev/"${DRIVE}${PVALUE}2" && break
+    cryptsetup luksFormat --type luks1 /dev/"${DRIVE}${PVALUE}${ROOT_LETTER}" &&
+        break
 done
 
 while true; do
-    cryptsetup open /dev/"${DRIVE}${PVALUE}2" cryptroot && break
+    cryptsetup open /dev/"${DRIVE}${PVALUE}${ROOT_LETTER}" cryptroot && break
 done
 
 yes | mkfs.ext4 /dev/mapper/cryptroot
