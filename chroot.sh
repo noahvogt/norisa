@@ -57,5 +57,6 @@ if [ "$EFI" = "yes" ]; then
 else
     grub-install --target=i386-pc /dev/"${DRIVE}" --recheck
 grub-mkconfig -o /boot/grub/grub.cfg
+fi
 
 rm drive tzfinal.tmp
