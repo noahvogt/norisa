@@ -24,6 +24,7 @@ systemctl enable NetworkManager
 ls /sys/firmware/efi/efivars && EFI=yes
 
 if [ "$EFI" = "yes" ]; then
+    UEFI_LETTER="1"
     SWAP_LETTER="2"
     ROOT_LETTER="3"
 else
@@ -50,13 +51,14 @@ sed -i 's/#GRUB_ENABLE_CRYPTODISK/GRUB_ENABLE_CRYPTODISK/' /etc/default/grub
 echo "swap /dev/${DRIVE}${PVALUE}${SWAP_LETTER} /dev/urandom swap,cipher=aes-cbc-essiv:sha256,size=256" >> /etc/crypttab
 
 if [ "$EFI" = "yes" ]; then
-    pacman -S grub efibootmgr
+    pacman --noconfirm --needed -S efibootmgr
     mkdir /boot/efi
-    mount /dev/"${DRIVE}${PVALUE}1" /boot/efi
-    grub-install --target=x86_64-efi --bootloader-id=GRUB --efi-directory=/boot/efi
+    mount /dev/"${DRIVE}${PVALUE}${UEFI_LETTER}" /boot/efi
+    grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=grub /dev/"${DRIVE}" --recheck
 else
     grub-install --target=i386-pc /dev/"${DRIVE}" --recheck
-grub-mkconfig -o /boot/grub/grub.cfg
 fi
+
+grub-mkconfig -o /boot/grub/grub.cfg
 
 rm drive tzfinal.tmp

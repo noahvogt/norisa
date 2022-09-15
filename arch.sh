@@ -29,6 +29,7 @@ PVALUE=$(echo "${DRIVE}" | grep "^nvme" | sed 's/.*[0-9]/p/')
 timedatectl set-ntp true
 
 if [ "$EFI" = "yes" ]; then
+    UEFI_LETTER="1"
     SWAP_LETTER="2"
     ROOT_LETTER="3"
     cat <<EOF | fdisk -W always /dev/"${DRIVE}"
@@ -54,7 +55,7 @@ n
 
 w
 EOF
-mkfs.fat -F32 /dev/"${DRIVE}${PVALUE}1"
+mkfs.vfat -F32 /dev/"${DRIVE}${PVALUE}${UEFI_LETTER}"
 
 else
     cat <<EOF | fdisk -W always /dev/"${DRIVE}"
