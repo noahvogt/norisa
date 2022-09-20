@@ -62,19 +62,20 @@ choose_user() {
     done
 }
 
-# ask for new user if /home is not empty
+# give info if /home is not empty
 if [ "$(ls -A /home)" ]; then
     echo -e "\e[0;30;46m /home/ not empty, human users already available \e[0m"
-    while true; do
-        echo -e "\e[0;30;42m Do you want to create a new user? [y/n] \e[0m"
-        read -rp " >>> " want_new_user
-        if echo "$want_new_user" | grep -q "y\|Y"; then
-            create_new_user; break
-        elif echo "$want_new_user" | grep -q "n\|N"; then
-            choose_user; break
-        fi
-    done
 fi
+
+while true; do
+    echo -e "\e[0;30;42m Do you want to create a new user? [y/n] \e[0m"
+    read -rp " >>> " want_new_user
+    if echo "$want_new_user" | grep -q "y\|Y"; then
+        create_new_user; break
+    elif echo "$want_new_user" | grep -q "n\|N"; then
+        choose_user; break
+    fi
+done
 
 # create ~/ directories
 echo -e "\e[0;30;34mCreating ~/ directories ...\e[0m"
@@ -121,7 +122,7 @@ doas -u "$username" /home/"$username"/.local/src/dotfiles/apply-dotfiles
 
 # download packages from the official repos
 echo -e "\e[0;30;34mInstalling packages from official repos ...\e[0m"
-pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot xbindkeys xf86-video-vesa xf86-video-fbdev libxinerama geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter tlp ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint element-desktop tesseract-data-deu tesseract-data-eng || pacman_error_exit
+pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot xbindkeys xf86-video-vesa xf86-video-fbdev libxinerama geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter tlp ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint element-desktop tesseract-data-deu tesseract-data-eng keepassxc ueberzug || pacman_error_exit
 
 # install aur packages
 echo -e "\e[0;30;34mInstalling packages from AUR ...\e[0m"
