@@ -126,7 +126,7 @@ pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop x
 
 # install aur packages
 echo -e "\e[0;30;34mInstalling packages from AUR ...\e[0m"
-doas -u "$username" paru -S --noconfirm --needed betterlockscreen simple-mtpfs redshift dashbinsh devour vim-plug lf-bin picom-jonaburg-fix doasedit jdk-openjdk-xdg openssh-dotconfig wget-xdg networkmanager-openvpn-xdg abook-configdir ungoogled-chromium-xdg-bin nerd-fonts-jetbrains-mono-160 electron-xdg-bin yarn-xdg-bin || pacman_error_exit
+doas -u "$username" paru -S --noconfirm --needed betterlockscreen simple-mtpfs redshift dashbinsh devour vim-plug lf-bin picom-jonaburg-fix doasedit jdk-openjdk-xdg openssh-dotconfig wget-xdg networkmanager-openvpn-xdg abook-configdir ungoogled-chromium-xdg-bin nerd-fonts-jetbrains-mono-160 electron-xdg-bin yarn-xdg-bin chromium-extension-clearurls chromium-extension-copy-url-on-hover-bin chromium-extension-decentraleyes chromium-extension-history-disabler-bin chromium-extension-https-everywhere chromium-extension-keepassxc-browser-bin chromium-extension-return-youtube-dislike chromium-extension-rggl-bin chromium-extension-ublock-origin-bin || pacman_error_exit
 
 suckless_build() {
     if [ ! -d /home/"$username"/.local/src/"$1" ]; then
