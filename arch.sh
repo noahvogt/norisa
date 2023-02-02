@@ -30,7 +30,6 @@ timedatectl set-ntp true
 
 if [ "$EFI" = "yes" ]; then
     UEFI_LETTER="1"
-    SWAP_LETTER="2"
     ROOT_LETTER="3"
     cat <<EOF | fdisk -W always /dev/"${DRIVE}"
 g
@@ -58,9 +57,8 @@ EOF
 mkfs.vfat -F32 /dev/"${DRIVE}${PVALUE}${UEFI_LETTER}"
 
 else
-    cat <<EOF | fdisk -W always /dev/"${DRIVE}"
-    SWAP_LETTER="1"
     ROOT_LETTER="2"
+    cat <<EOF | fdisk -W always /dev/"${DRIVE}"
 o
 n
 p

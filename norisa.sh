@@ -2,7 +2,7 @@
 
 # install git, vim, opendoas and (base-devel minus sudo)
 echo -e "\e[0;30;34mInstalling some packages ...\e[0m"
-pacman -Sy --noconfirm --needed git vim opendoas autoconf automake binutils bison fakeroot file findutils flex gawk gcc gettext grep groff gzip libtool m4 make pacman patch pkgconf sed texinfo which || { echo -e "\e[0;30;101m Error at script start:\n\nAre you sure you're running this as the root user?\n\t(Tip: run 'whoami' to check)\n\nAre you sure you have an internet connection?\n\t(Tip: run 'ip a' to check)\n\e[0m"; exit 1; }
+pacman -Sy --noconfirm --needed git vim opendoas autoconf automake binutils bison fakeroot file findutils flex gawk gcc gettext grep groff gzip libtool m4 make pacman patch pkgconf sed texinfo which libxft || { echo -e "\e[0;30;101m Error at script start:\n\nAre you sure you're running this as the root user?\n\t(Tip: run 'whoami' to check)\n\nAre you sure you have an internet connection?\n\t(Tip: run 'ip a' to check)\n\e[0m"; exit 1; }
 
 pacman_error_exit() {
     echo -e "\e[0;30;101m Error: Pacman command was not successfull. Exiting ...\e[0m"
@@ -103,12 +103,6 @@ if ! pacman -Q | grep -q paru; then
     rm /home/"$username"/.local/src/paru-bin.tar.gz
 fi
 
-# need to use piped yes as --noconfirm doesn't work with package conflicts
-if ! pacman -Q | grep -q libxft-bgra; then
-    echo -e "\e[0;30;34mInstalling libxft-bgra ...\e[0m"
-    yes | doas -u "$username" paru -S --needed libxft-bgra || pacman_error_exit
-fi
-
 # fetch dotfiles repo + apply dotfiles
 if [ ! -d /home/"$username"/.local/src/dotfiles ]; then
     echo -e "\e[0;30;34mFetching dotfiles ...\e[0m"
@@ -122,7 +116,7 @@ doas -u "$username" /home/"$username"/.local/src/dotfiles/apply-dotfiles
 
 # download packages from the official repos
 echo -e "\e[0;30;34mInstalling packages from official repos ...\e[0m"
-pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot xbindkeys xf86-video-vesa xf86-video-fbdev libxinerama geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter tlp ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint element-desktop tesseract-data-deu tesseract-data-eng keepassxc ueberzug img2pdf dust ctags python-wand python-termcolor python-black || pacman_error_exit
+pacman -S --noconfirm --needed xorg-server xorg-xinit xorg-xwininfo xorg-xprop xorg-xbacklight xorg-xdpyinfo xorg-xsetroot xbindkeys xf86-video-vesa xf86-video-fbdev libxinerama geogebra shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive-most dash neofetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools tlp mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter tlp ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint element-desktop tesseract-data-deu tesseract-data-eng keepassxc ueberzug img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk || pacman_error_exit
 
 # install aur packages
 echo -e "\e[0;30;34mInstalling packages from AUR ...\e[0m"
@@ -159,7 +153,6 @@ dwm_build() {
     fi
 }
 
-dwm_build chadwm
 suckless_build st
 suckless_build dwmblocks
 suckless_build dmenu
