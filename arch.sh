@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 # This a lazy and DANGEROUS way to install Arch.
 # I do not recommend this to other people, ONLY

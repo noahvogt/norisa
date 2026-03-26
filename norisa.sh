@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 # ASSUMED STATE OF TARGET SYSTEM:
 # - internet access
@@ -6,36 +7,63 @@
 # - ~30 GB of free disk space
 # working 1.) base 2.) linux packages
 
+readonly C_RESET='\e[0m'
+readonly C_INFO='\e[1;36m'   # Cyan
+readonly C_OK='\e[1;32m'     # Green
+readonly C_CHANGE='\e[1;33m' # Yellow
+readonly C_ERR='\e[1;31m'    # Red
+
+log_info() {
+    echo -e "${C_INFO}[ INFO ]${C_RESET} $1"
+}
+
+log_ok() {
+    echo -e "${C_OK}[  OK  ]${C_RESET} $1"
+}
+
+log_changed() {
+    echo -e "${C_CHANGE}[ CHANGE ]${C_RESET} $1"
+}
+
+log_error() {
+    echo -e "${C_ERR}[ ERROR ]${C_RESET} $1" >&2
+}
+
+error_exit() {
+    log_error "$1"
+    exit 1
+}
+
 # Install opendoas and (base-devel, devtools minus sudo), libxft
-echo -e "\e[0;30;34mInstalling some initial packages ...\e[0m"
-pacman -Sy --noconfirm --needed archlinux-keyring opendoas autoconf automake binutils bison debugedit fakeroot file findutils flex gawk gcc gettext grep groff gzip libtool m4 make pacman patch pkgconf sed texinfo which libxft breezy coreutils curl diffutils expac git glow gum jq mercurial openssh parallel reuse rsync subversion util-linux || {
-    echo -e "\e[0;30;101m Error at script start:\n\nAre you sure you're running this as the root user?\n\t(Tip: run 'whoami' to check)\n\nAre you sure you have an internet connection?\n\t(Tip: run 'ip a' to check)\n\e[0m"
-    exit 1
+readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison debugedit fakeroot file findutils flex gawk gcc gettext grep groff gzip libtool m4 make pacman patch pkgconf sed texinfo which libxft breezy coreutils curl diffutils expac git glow gum jq mercurial openssh parallel reuse rsync subversion util-linux"
+
+pkg_install_error_exit() {
+    error_exit "Package installation command was not successfull. Exiting ..."
 }
 
-pacman_error_exit() {
-    echo -e "\e[0;30;101m Error: Pacman command was not successfull. Exiting ...\e[0m"
-    exit 1
-}
-
-compile_error_exit() {
-    echo -e "\e[0;30;101m Error: Compilation command was not successfull. Exiting ...\e[0m"
-    exit 1
+cd_error_exit() {
+    log_info "Current working directory:"
+    pwd
+    error_exit "Could not change into '$1'. Exiting ..."
 }
 
 cd_into() {
     cd "$1" || cd_error_exit "$1"
 }
 
-cd_error_exit() {
-    echo -e "\e[0;30;46m Current working directory: \e[0m"
-    pwd
-    echo -e "\e[0;30;101m Error: Could not change into '$1'. Exiting ...\e[0m"
-    exit 1
+ensure_pkgs_installed() {
+    MISSING_PKGS="$(pacman -T $1)"
+    log_info "Ensuring $2 packages are installed"
+    if [ -n "$MISSING_PKGS" ]; then
+        "$3" -Sy --noconfirm --needed "$MISSING_PKGS" || pkg_install_error_exit
+        log_changed "$2 packages are now installed"
+    else
+        log_ok "$2 packages are already installed"
+    fi
 }
 
 setup_temporary_doas() {
-    echo -e "\e[0;30;34mSetting up temporary doas config ...\e[0m"
+    log_info "Setting up temporary doas config"
     printf "permit nopass :wheel
 permit nopass root as $username\n" >/etc/doas.conf
     chown -c root:root /etc/doas.conf
@@ -43,7 +71,7 @@ permit nopass root as $username\n" >/etc/doas.conf
 }
 
 setup_final_doas() {
-    echo -e "\e[0;30;34mSetting up final doas config ...\e[0m"
+    log_info "Setting up final doas config"
     printf "permit persist :wheel
 permit nopass $username as root cmd mount
 permit nopass $username as root cmd umount
@@ -71,81 +99,96 @@ choose_user() {
     done
 }
 
-add_user_to_groups() {
+ensure_user_is_part_of_needed_groups() {
+    log_info "Verify $username is part of video and input groups"
     if ! groups "$username" | grep "input" | grep -q "video"; then
-        echo -e "\e[0;30;34mAdding $username to video and input groups ... \e[0m"
+        log_info "Adding $username to video and input groups"
         usermod -aG video "$username"
         usermod -aG input "$username"
+    else
+        log_ok "$username is already part of these groups"
     fi
 }
 
 ensure_history_file_exists() {
+    log_info "Ensure history file exists"
     if ! [ -f /home/"$username"/.cache/zsh/history ]; then
         echo -e "\e[0;30;34mEnsuring initial zsh history file exists ...\e[0m"
         mkdir -vp /home/"$username"/.cache/zsh
         touch /home/"$username"/.cache/zsh/history
+        log_changed "Created history file"
+    else
+        log_ok "history file is already present"
     fi
 }
 
-change_login_shell_to_zsh() {
+ensure_login_shell_is_zsh() {
+    log_info "Ensure login shell is zsh"
     if ! grep "^$username.*::/home/$username" /etc/passwd | sed 's/^.*://' |
         grep -q "^$(which zsh)$"; then
         echo -e "\e[0;30;34mSetting default shell to $(which zsh)...\e[0m"
         chsh -s "$(which zsh)" "$username" || exit 1
+        log_changed "changed shell to zsh"
     fi
 }
 
-make_user_owner_of_HOME_and_mnt_dirs() {
-    echo -e "\e[0;30;34mChanging ownership of /home/$username + /mnt ...\e[0m"
-    chown -R "$username":users /home/"$username"/
-    chown -R "$username":users /mnt/
+ensure_pkgs_installed "$BASE_PKGS" "some basic" "pacman"
+
+ensure_user_selected() {
+    if [ -d /home ]; then
+        mapfile -t home_users < <(ls -A /home)
+        user_count=${#home_users[@]}
+    else
+        user_count=0
+    fi
+
+    if [ "$user_count" -eq 1 ]; then
+        username="${home_users[0]}"
+        echo -e "\e[0;30;46m A single user was found: $username \e[0m"
+    elif [ "$user_count" -gt 1 ]; then
+        echo -e "\e[0;30;46m /home/ not empty, $user_count users already available \e[0m"
+        while true; do
+            echo -e "\e[0;30;42m Do you want to create another user? [y/n] \e[0m"
+            read -rp " >>> " want_new_user
+
+            if [[ "$want_new_user" =~ ^[yY]$ ]]; then
+                create_new_user
+                break
+            elif [[ "$want_new_user" =~ ^[nN]$ ]]; then
+                choose_user
+                break
+            fi
+        done
+    else
+        want_new_user=y
+        create_new_user
+    fi
 }
 
-# Check if /home is not empty
-if [ -d /home ]; then
-    mapfile -t home_users < <(ls -A /home)
-    user_count=${#home_users[@]}
-else
-    user_count=0
-fi
+ensure_user_selected
 
-if [ "$user_count" -eq 1 ]; then
-    username="${home_users[0]}"
-    echo -e "\e[0;30;46m A single user was found: $username \e[0m"
-elif [ "$user_count" -gt 1 ]; then
-    echo -e "\e[0;30;46m /home/ not empty, $user_count users already available \e[0m"
-    while true; do
-        echo -e "\e[0;30;42m Do you want to create another user? [y/n] \e[0m"
-        read -rp " >>> " want_new_user
+ensure_needed_dirs_created() {
+    log_info "Creating needed ~/ directories"
+    needed_dirs=(
+        "/home/$username/dox"
+        "/home/$username/pix"
+        "/home/$username/dl"
+        "/home/$username/vids"
+        "/home/$username/mus"
+        "/home/$username/.local/bin"
+        "/home/$username/.config"
+        "/home/$username/.local/share"
+        "/home/$username/.local/src"
+    )
+    mkdir -vp "${needed_dirs[@]}"
+    chown -v "$username:users" "${needed_dirs[@]}"
+}
 
-        if [[ "$want_new_user" =~ ^[yY]$ ]]; then
-            create_new_user
-            break
-        elif [[ "$want_new_user" =~ ^[nN]$ ]]; then
-            choose_user
-            break
-        fi
-    done
-else
-    want_new_user=y
-    create_new_user
-fi
-
-# Create ~/ Directories
-echo -e "\e[0;30;34mCreating ~/ directories ...\e[0m"
-mkdir -vp /home/"$username"/dox /home/"$username"/pix /home/"$username"/dl
-mkdir -vp /home/"$username"/vids /home/"$username"/mus
-mkdir -vp /home/"$username"/.local/bin /home/"$username"/.config
-mkdir -vp /home/"$username"/.local/share /home/"$username"/.local/src
-
-if [[ "$want_new_user" =~ ^[yY]$ ]]; then
-    echo -e "\e[0;30;34mChanging ownership of /home/$username ...\e[0m"
-    chown -R "$username":users /home/"$username"/* /home/"$username"/.*
-fi
+ensure_needed_dirs_created
 
 setup_temporary_doas
 
-add_user_to_groups
+ensure_user_is_part_of_needed_groups
 
 # add xdg-repo
 # if ! grep -q "^\s*\[xdg-repo\]\s*$" /etc/pacman.conf; then
@@ -167,60 +210,83 @@ if ! grep -q "^\s*\[chaotic-aur\]\s*$" /etc/pacman.conf; then
 Include = /etc/pacman.d/chaotic-mirrorlist" >>/etc/pacman.conf
 fi
 
-# Sync all Package db's
-pacman -Syyy
-
 # Install AUR Helper (paru as paru-bin is out-of-date)
-if ! pacman -Q | grep -q paru; then
-    echo -e "\e[0;30;34mInstalling AUR helper (paru) ...\e[0m"
-    pacman -S --noconfirm paru
-fi
+ensure_paru_installed() {
+    log_info "Ensuring paru is installed"
+    if ! pacman -Q | grep -q paru; then
+        pacman -S --noconfirm paru
+        log_changed "Installed AUR helper (paru)"
+    else
+        log_ok "AUR helper (paru) is already installed"
+    fi
+}
 
-# Symlink sudo to doas for Compatibility with paru and hardcoded PKGBUILDs
-echo -e "\e[0;30;34mSymlinking sudo to doas ...\e[0m"
-if [ ! -f /usr/bin/sudo ]; then
-    ln -s /usr/bin/doas /usr/bin/sudo
-fi
+ensure_sudo_is_symlinked_to_doas() {
+    log_info "Ensure sudo is symlinked to doas"
+    if [ ! -f /usr/bin/sudo ]; then
+        ln -s /usr/bin/doas /usr/bin/sudo
+        log_changed "sudo was symlinked to doas"
+    else
+        log_ok "sudo is already symlinked to doas"
+    fi
+}
 
-# Fetch + Apply Dotfiles
-if [ ! -d /home/"$username"/.local/src/dotfiles ]; then
-    echo -e "\e[0;30;34mFetching dotfiles ...\e[0m"
-    cd_into /home/"$username"/.local/src
-    while true; do
-        git clone https://git.noahvogt.com/noah/dotfiles.git && break
-    done
-fi
-cd_into /home/"$username"/.local/src/dotfiles
-echo -e "\e[0;30;34mApplying dotfiles ...\e[0m"
-doas -u "$username" /home/"$username"/.local/src/dotfiles/apply-dotfiles
+ensure_dotfiles_are_fetched() {
+    log_info "Ensuring dotfiles are fetched"
+    if [ ! -d /home/"$username"/.local/src/dotfiles ]; then
+        echo -e "\e[0;30;34mFetching dotfiles ...\e[0m"
+        cd_into /home/"$username"/.local/src
+        while true; do
+            git clone https://git.noahvogt.com/noah/dotfiles.git && break
+        done
+        log_changed "dotfiles were fetched successfully"
+    else
+        log_ok "dotfiles were already fetched"
+    fi
+}
 
-# Download Packages from the Official Repos
+apply_dotfiles() {
+    log_info "Applying dotfiles"
+    cd_into /home/"$username"/.local/src/dotfiles
+    doas -u "$username" /home/"$username"/.local/src/dotfiles/apply-dotfiles
+}
+
+apply_dotfiles
+
 # TODO: add element-desktop back
-echo -e "\e[0;30;34mInstalling packages from official repos ...\e[0m"
-pacman -S --noconfirm --needed xorg-server xf86-video-vesa xf86-video-fbdev shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive dash unifetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc ueberzug img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ungoogled-chromium-bin ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader wireplumber yad ydotool gojq hyprland python-poetry python-build python-pillow ttf-material-symbols-variable-git ttf-space-mono-nerd wlogout kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock brave-bin clang swaync bat wl-clipboard syncthing python-debugpy ghostty awww kitty tokei gemini-cli hypridle tlp || pacman_error_exit
+MAIN_PKGS="xorg-server xf86-video-vesa xf86-video-fbdev shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive dash unifetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc ueberzug img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ungoogled-chromium-bin ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader wireplumber yad ydotool gojq hyprland python-poetry python-build python-pillow ttf-material-symbols-variable-git ttf-space-mono-nerd wlogout kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock brave-bin clang swaync bat wl-clipboard syncthing python-debugpy ghostty awww kitty tokei gemini-cli hypridle tlp"
+ensure_history_file_exists "$MAIN_PKGS" "main packages" "pacman"
 
-# Install AUR Packages
-echo -e "\e[0;30;34mInstalling packages from AUR ...\e[0m"
-doas -u "$username" paru -S --noconfirm --needed simple-mtpfs redshift dashbinsh cspell-lsp doasedit nodejs-cspell nvim-lazy google-java-format lexend-fonts-git || pacman_error_exit
+AUR_PKGS="simple-mtpfs redshift dashbinsh cspell-lsp doasedit nodejs-cspell nvim-lazy google-java-format lexend-fonts-git"
+ensure_pkgs_installed "$AUR_PKGS" "AUR" "doas -u $username paru"
 
-# Set Global zshenv
-echo -e "\e[0;30;34mSetting global zshenv ...\e[0m"
-mkdir -vp /etc/zsh
-echo "export ZDOTDIR=\$HOME/.config/zsh" >/etc/zsh/zshenv
+ensure_global_zsh_installed() {
+    log_info "Ensuring global zshenv"
+    if grep -q "export ZDOTDIR=\$HOME/.config/zsh" /etc/zsh/zshenv; then
+        log_ok "Global zshenv ist already installed"
+    else
+        mkdir -vp /etc/zsh
+        echo "export ZDOTDIR=\$HOME/.config/zsh" >/etc/zsh/zshenv
+        log_changed "Installed global zshenv"
+    fi
+}
+
+ensure_global_zsh_installed
 
 ensure_history_file_exists
 
-make_user_owner_of_HOME_and_mnt_dirs
-
-change_login_shell_to_zsh
+ensure_login_shell_is_zsh
 
 setup_final_doas
 
-# ~/ Cleanup
-echo -e "\e[0;30;34mCleaning up \$HOME ...\e[0m"
-for f in /home/"$username"/.bash*; do
-    [ -f "$f" ] && rm "$f"
-done
-for f in /home/"$username"/.less*; do
-    [ -f "$f" ] && rm "$f"
-done
+cleanup_home() {
+    log_info "Cleaning up \$HOME"
+    for f in /home/"$username"/.bash*; do
+        [ -f "$f" ] && rm "$f"
+    done
+    for f in /home/"$username"/.less*; do
+        [ -f "$f" ] && rm "$f"
+    done
+}
+
+cleanup_home
