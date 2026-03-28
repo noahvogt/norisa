@@ -34,8 +34,8 @@ error_exit() {
     exit 1
 }
 
-# Install opendoas and (base-devel, devtools minus sudo), libxft
-readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison debugedit fakeroot file findutils flex gawk gcc gettext grep groff gzip libtool m4 make pacman patch pkgconf sed texinfo which libxft breezy coreutils curl diffutils expac git glow gum jq mercurial openssh parallel reuse rsync subversion util-linux"
+# Install opendoas and (base-devel, devtools minus sudo), libxft, cargo
+readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison debugedit fakeroot file findutils flex gawk gcc gettext grep groff gzip libtool m4 make pacman patch pkgconf sed texinfo which libxft breezy coreutils curl diffutils expac git glow gum jq mercurial openssh parallel reuse rsync subversion util-linux cargo"
 
 pkg_install_error_exit() {
     error_exit "Package installation command was not successfull. Exiting ..."
@@ -55,7 +55,7 @@ ensure_pkgs_installed() {
     MISSING_PKGS="$(pacman -T $1)"
     log_info "Ensuring $2 packages are installed"
     if [ -n "$MISSING_PKGS" ]; then
-        "$3" -Sy --noconfirm --needed "$MISSING_PKGS" || pkg_install_error_exit
+        $3 -Sy --noconfirm --needed $MISSING_PKGS || pkg_install_error_exit
         log_changed "$2 packages are now installed"
     else
         log_ok "$2 packages are already installed"
@@ -179,46 +179,10 @@ ensure_needed_dirs_created() {
         "/home/$username/.config"
         "/home/$username/.local/share"
         "/home/$username/.local/src"
+        "/home/$username/.local/"
     )
     mkdir -vp "${needed_dirs[@]}"
     chown -v "$username:users" "${needed_dirs[@]}"
-}
-
-ensure_needed_dirs_created
-
-setup_temporary_doas
-
-ensure_user_is_part_of_needed_groups
-
-# add xdg-repo
-# if ! grep -q "^\s*\[xdg-repo\]\s*$" /etc/pacman.conf; then
-#     echo -e "\e[0;30;34mAdding Noah's xdg-repo ...\e[0m"
-#     pacman-key --recv-keys 7FA7BB604F2A4346 --keyserver keyserver.ubuntu.com
-#     pacman-key --lsign-key 7FA7BB604F2A4346
-#     echo "[xdg-repo]
-# Server = https://git.noahvogt.com/noah/\$repo/raw/master/\$arch" >> /etc/pacman.conf
-# fi
-
-# Add chaotic-aur
-if ! grep -q "^\s*\[chaotic-aur\]\s*$" /etc/pacman.conf; then
-    echo -e "\e[0;30;34mAdding the chaotic aur repo ...\e[0m"
-    pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-    pacman-key --lsign-key 3056513887B78AEB
-    pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
-    pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
-    echo "[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist" >>/etc/pacman.conf
-fi
-
-# Install AUR Helper (paru as paru-bin is out-of-date)
-ensure_paru_installed() {
-    log_info "Ensuring paru is installed"
-    if ! pacman -Q | grep -q paru; then
-        pacman -S --noconfirm paru
-        log_changed "Installed AUR helper (paru)"
-    else
-        log_ok "AUR helper (paru) is already installed"
-    fi
 }
 
 ensure_sudo_is_symlinked_to_doas() {
@@ -230,6 +194,55 @@ ensure_sudo_is_symlinked_to_doas() {
         log_ok "sudo is already symlinked to doas"
     fi
 }
+
+ensure_needed_dirs_created
+
+setup_temporary_doas
+ensure_user_is_part_of_needed_groups
+ensure_sudo_is_symlinked_to_doas
+
+# add xdg-repo
+# if ! grep -q "^\s*\[xdg-repo\]\s*$" /etc/pacman.conf; then
+#     echo -e "\e[0;30;34mAdding Noah's xdg-repo ...\e[0m"
+#     pacman-key --recv-keys 7FA7BB604F2A4346 --keyserver keyserver.ubuntu.com
+#     pacman-key --lsign-key 7FA7BB604F2A4346
+#     echo "[xdg-repo]
+# Server = https://git.noahvogt.com/noah/\$repo/raw/master/\$arch" >> /etc/pacman.conf
+# fi
+
+# Add chaotic-aur (x86_64 only)
+if [ "$ARCH" = "x86_64" ]; then
+    if ! grep -q "^\s*\[chaotic-aur\]\s*$" /etc/pacman.conf; then
+        echo -e "\e[0;30;34mAdding the chaotic aur repo ...\e[0m"
+        pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+        pacman-key --lsign-key 3056513887B78AEB
+        pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
+        pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+        echo "[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist" >>/etc/pacman.conf
+    fi
+fi
+
+# Install AUR Helper (paru as paru-bin is out-of-date)
+ensure_paru_installed() {
+    log_info "Ensuring paru is installed"
+    if ! command -v paru >/dev/null 2>&1; then
+        if [ "$ARCH" = "x86_64" ] && pacman -Si paru >/dev/null 2>&1; then
+            pacman -S --noconfirm paru
+        else
+            log_info "Building paru from source..."
+            temp_dir=$(mktemp -d)
+            chown "$username:users" "$temp_dir"
+            doas -u "$username" bash -c "cd $temp_dir && git clone https://aur.archlinux.org/paru.git && cd paru && makepkg --noconfirm"
+            pacman -U --noconfirm "$temp_dir"/paru/*.pkg.tar.* || pkg_install_error_exit
+        fi
+        log_changed "Installed AUR helper (paru)"
+    else
+        log_ok "AUR helper (paru) is already installed"
+    fi
+}
+
+ensure_paru_installed
 
 ensure_dotfiles_are_fetched() {
     log_info "Ensuring dotfiles are fetched"
@@ -251,13 +264,27 @@ apply_dotfiles() {
     doas -u "$username" /home/"$username"/.local/src/dotfiles/apply-dotfiles
 }
 
-apply_dotfiles
+# Architecture-specific packages
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel xf86-video-nouveau ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck"
+    ARCH_AUR_PKGS="simple-mtpfs google-java-format"
+else
+    # Asahi/ARM specific or generic alternatives
+    ARCH_PKGS="chromium"
+    ARCH_AUR_PKGS="unifetch shellcheck-bin"
+    # TODO: fix manual install of wlogout
+fi
 
 # TODO: add element-desktop back
-MAIN_PKGS="xorg-server xf86-video-vesa xf86-video-fbdev shellcheck neovim ranger xournalpp ffmpeg obs-studio sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon texlive dash unifetch htop wireless_tools alsa-utils acpi zip libreoffice nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat nomacs pcmanfm openbsd-netcat powertop mupdf-tools nomacs stow zsh-autosuggestions xf86-video-amdgpu xf86-video-intel xf86-video-nouveau npm fzf unclutter ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc ueberzug img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ungoogled-chromium-bin ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader wireplumber yad ydotool gojq hyprland python-poetry python-build python-pillow ttf-material-symbols-variable-git ttf-space-mono-nerd wlogout kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock brave-bin clang swaync bat wl-clipboard syncthing python-debugpy ghostty awww kitty tokei gemini-cli hypridle tlp"
-ensure_history_file_exists "$MAIN_PKGS" "main packages" "pacman"
+MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc ueberzug img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader wireplumber yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei gemini-cli hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex $ARCH_PKGS"
 
-AUR_PKGS="simple-mtpfs redshift dashbinsh cspell-lsp doasedit nodejs-cspell nvim-lazy google-java-format lexend-fonts-git"
+ensure_pkgs_installed "$MAIN_PKGS" "main packages" "pacman"
+
+ensure_dotfiles_are_fetched
+apply_dotfiles
+
+AUR_PKGS="redshift dashbinsh cspell-lsp doasedit nodejs-cspell nvim-lazy lexend-fonts-git $ARCH_AUR_PKGS"
 ensure_pkgs_installed "$AUR_PKGS" "AUR" "doas -u $username paru"
 
 ensure_global_zsh_installed() {
