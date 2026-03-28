@@ -277,7 +277,7 @@ else
 fi
 
 # TODO: add element-desktop back
-MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pulseaudio-alsa pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc ueberzug img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader wireplumber yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei gemini-cli hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex $ARCH_PKGS"
+MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter ccls mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc ueberzug img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei gemini-cli hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman $ARCH_PKGS"
 
 ensure_pkgs_installed "$MAIN_PKGS" "main packages" "pacman"
 
@@ -298,13 +298,15 @@ ensure_global_zsh_installed() {
     fi
 }
 
-ensure_global_zsh_installed
-
-ensure_history_file_exists
-
-ensure_login_shell_is_zsh
-
-setup_final_doas
+ensure_bluetooth_service_enabled() {
+    log_info "Ensuring Bluetooth service is enabled"
+    if ! systemctl is-enabled bluetooth.service >/dev/null 2>&1; then
+        systemctl enable bluetooth.service
+        log_changed "Enabled bluetooth.service system-wide"
+    else
+        log_ok "Bluetooth service is already enabled"
+    fi
+}
 
 cleanup_home() {
     log_info "Cleaning up \$HOME"
@@ -316,4 +318,9 @@ cleanup_home() {
     done
 }
 
+ensure_global_zsh_installed
+ensure_history_file_exists
+ensure_login_shell_is_zsh
+setup_final_doas
+ensure_bluetooth_service_enabled
 cleanup_home
