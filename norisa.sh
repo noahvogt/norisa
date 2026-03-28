@@ -267,12 +267,12 @@ apply_dotfiles() {
 # Architecture-specific packages
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
-    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel xf86-video-nouveau ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck"
+    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel xf86-video-nouveau ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp"
     ARCH_AUR_PKGS="simple-mtpfs google-java-format"
 else
     # Asahi/ARM specific or generic alternatives
     ARCH_PKGS="chromium"
-    ARCH_AUR_PKGS="unifetch shellcheck-bin"
+    ARCH_AUR_PKGS="unifetch shellcheck-bin yt-dlp-git"
     # TODO: fix manual install of wlogout
 fi
 
@@ -284,7 +284,7 @@ ensure_pkgs_installed "$MAIN_PKGS" "main packages" "pacman"
 ensure_dotfiles_are_fetched
 apply_dotfiles
 
-AUR_PKGS="redshift dashbinsh cspell-lsp doasedit nodejs-cspell nvim-lazy lexend-fonts-git $ARCH_AUR_PKGS"
+AUR_PKGS="redshift dashbinsh cspell-lsp doasedit nodejs-cspell nvim-lazy lexend-fonts-git xwaylandvideobridge $ARCH_AUR_PKGS"
 ensure_pkgs_installed "$AUR_PKGS" "AUR" "doas -u $username paru"
 
 ensure_global_zsh_installed() {
