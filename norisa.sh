@@ -18,11 +18,9 @@ if [ "$ARCH" = "x86_64" ]; then
 else
     # Asahi/ARM specific or generic alternatives
     ARCH_PKGS="chromium"
-    ARCH_AUR_PKGS="unifetch shellcheck-bin yt-dlp-git logseq-desktop-bin code2prompt"
-    # TODO: fix manual install of wlogout
+    ARCH_AUR_PKGS="unifetch shellcheck-bin yt-dlp-git logseq-desktop-bin code2prompt wlogout"
 fi
 
-# TODO: add element-desktop back
 readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei gemini-cli hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect $ARCH_PKGS"
 
 readonly AUR_PKGS="redshift dashbinsh cspell-lsp doasedit-alternative nodejs-cspell nvim-lazy lexend-fonts-git xwaylandvideobridge jdtls gradle-autowrap localsend-bin $ARCH_AUR_PKGS"
@@ -82,34 +80,46 @@ ensure_pkgs_installed() {
     fi
 }
 
+_write_doas_config() {
+    local content="$1"
+    local config_path="/etc/doas.conf"
+
+    if [[ -f "$config_path" ]] &&
+        [[ "$(cat "$config_path")" == "$content" ]] &&
+        [[ "$(stat -c "%a %U:%G" "$config_path")" == "400 root:root" ]]; then
+        return 1 # no change needed
+    fi
+
+    printf "%s\n" "$content" >"$config_path"
+    chown root:root "$config_path"
+    chmod 400 "$config_path"
+    return 0 # changed
+}
+
 setup_temporary_doas() {
-    # TODO: make more idempotent and DRY (setup_final_doas)
-    log_changed "Setting up temporary doas config"
-    printf "permit nopass :wheel
-permit nopass root as $username\n" >/etc/doas.conf
-    chown -c root:root /etc/doas.conf
-    chmod -c 0400 /etc/doas.conf
+    log_info "Setting up temporary doas config"
+    local content="permit nopass :wheel
+permit nopass root as $username"
+
+    if _write_doas_config "$content"; then
+        log_changed "Temporary doas config was set"
+    else
+        log_ok "doas config is already in desired state"
+    fi
 }
 
 setup_final_doas() {
     log_info "Setting up final doas config"
-    local config_path="/etc/doas.conf"
-    local desired_content="permit persist :wheel
+    local content="permit persist :wheel
 permit nopass $username as root cmd mount
 permit nopass $username as root cmd umount
 permit nopass root as $username"
 
-    if [[ -f "$config_path" ]] &&
-        [[ "$(cat "$config_path")" == "$desired_content" ]] &&
-        [[ "$(stat -c "%a %U:%G" "$config_path")" == "400 root:root" ]]; then
+    if _write_doas_config "$content"; then
+        log_changed "Final doas config was set"
+    else
         log_ok "doas config is already in desired state"
-        return 0
     fi
-
-    printf "%s\n" "$desired_content" >"$config_path"
-    chown root:root "$config_path"
-    chmod 400 "$config_path"
-    log_changed "Final doas config was set"
 }
 
 create_new_user() {
@@ -349,7 +359,7 @@ ensure_chaotic_aur_installed
 ensure_paru_installed
 
 ensure_pkgs_installed "$MAIN_PKGS" "main packages" "pacman"
-ensure_pkgs_installed "$AUR_PKGS" "AUR" "doas -u $username paru"
+ensure_pkgs_installed "$AUR_PKGS" "AUR" "doas -u $username paru --mflags --ignorearch"
 ensure_dotfiles_are_fetched_and_applied
 
 ensure_global_zsh_installed
