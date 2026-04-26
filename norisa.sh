@@ -315,6 +315,16 @@ ensure_bluetooth_service_enabled() {
     fi
 }
 
+ensure_docker_service_enabled() {
+    log_info "Ensuring Docker service is enabled"
+    if ! systemctl is-enabled docker.service >/dev/null 2>&1; then
+        systemctl enable docker.service
+        log_changed "Enabled docker.service system-wide"
+    else
+        log_ok "Docker service is already enabled"
+    fi
+}
+
 ensure_history_file_not_present() {
     if [ -f "$1" ]; then
         rm "$1"
@@ -378,5 +388,6 @@ ensure_history_file_exists
 ensure_login_shell_is_zsh
 setup_final_doas
 ensure_bluetooth_service_enabled
+ensure_docker_service_enabled
 ensure_dns_priority_in_nsswitch
 cleanup_home
