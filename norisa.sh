@@ -21,9 +21,9 @@ else
     ARCH_AUR_PKGS="unifetch shellcheck-bin yt-dlp-git logseq-desktop-bin code2prompt wlogout"
 fi
 
-readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei gemini-cli hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn mlocate fastfetch sqlx-cli biber texlive-langgerman wget $ARCH_PKGS"
+readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei gemini-cli hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn mlocate fastfetch sqlx-cli biber texlive-langgerman wget docker-compose $ARCH_PKGS"
 
-readonly AUR_PKGS="redshift dashbinsh cspell-lsp doasedit-alternative nodejs-cspell nvim-lazy lexend-fonts-git xwaylandvideobridge jdtls gradle-autowrap localsend-bin python-sklearn-onnx kotlin-language-server-bin ktlint-compose-rules ktlint-git $ARCH_AUR_PKGS"
+readonly AUR_PKGS="redshift dashbinsh cspell-lsp doasedit-alternative nodejs-cspell nvim-lazy lexend-fonts-git xwaylandvideobridge jdtls gradle-autowrap localsend-bin python-sklearn-onnx kotlin-language-server-bin ktlint-compose-rules ktlint $ARCH_AUR_PKGS"
 
 readonly C_RESET='\e[0m'
 readonly C_INFO='\e[1;36m'   # Cyan
@@ -151,6 +151,16 @@ ensure_user_is_part_of_needed_groups() {
         usermod -aG input "$username"
     else
         log_ok "$username is already part of these groups"
+    fi
+}
+
+ensure_user_is_part_of_docker_group() {
+    log_info "Verify $username is part of docker group"
+    if ! groups "$username" | grep "docker"; then
+        log_info "Adding $username to docker group"
+        usermod -aG docker "$username"
+    else
+        log_ok "$username is already part of the docker group"
     fi
 }
 
@@ -359,6 +369,7 @@ ensure_chaotic_aur_installed
 ensure_paru_installed
 
 ensure_pkgs_installed "$MAIN_PKGS" "main packages" "pacman"
+ensure_user_is_part_of_docker_group
 ensure_pkgs_installed "$AUR_PKGS" "AUR" "doas -u $username paru --mflags --ignorearch"
 ensure_dotfiles_are_fetched_and_applied
 
