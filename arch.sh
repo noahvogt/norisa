@@ -152,7 +152,7 @@ partprobe
 # Dynamic LUKS Formatting
 while true; do
     if [ "$AES_NI" = "yes" ]; then
-        cryptsetup luksFormat --type luks2 /dev/"${DRIVE}${PVALUE}${ROOT_LETTER}" && break
+        cryptsetup luksFormat --type luks1 /dev/"${DRIVE}${PVALUE}${ROOT_LETTER}" && break
     else
         cryptsetup luksFormat --type luks2 --cipher xchacha12,aes-adiantum-plain64 --hash sha256 /dev/"${DRIVE}${PVALUE}${ROOT_LETTER}" && break
     fi
