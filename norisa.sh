@@ -13,7 +13,7 @@ readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison 
 # Architecture-specific packages
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
-    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel xf86-video-nouveau ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp"
+    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel xf86-video-nouveau ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop"
     ARCH_AUR_PKGS="simple-mtpfs google-java-format code2prompt-bin"
 else
     # Asahi/ARM specific or generic alternatives
