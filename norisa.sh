@@ -13,7 +13,7 @@ readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison 
 # Architecture-specific packages
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
-    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel xf86-video-nouveau ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop"
+    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel xf86-video-nouveau ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan"
     ARCH_AUR_PKGS="simple-mtpfs google-java-format code2prompt-bin"
 else
     # Asahi/ARM specific or generic alternatives
@@ -368,6 +368,27 @@ ensure_dotfiles_are_fetched_and_applied() {
     fi
 }
 
+ensure_hyprland_systemd_target_created() {
+    log_info "Ensuring hyprland-session.target is created for xdg-desktop-portal"
+    local target_dir="/home/$username/.config/systemd/user"
+    local target_file="$target_dir/hyprland-session.target"
+    if [ ! -f "$target_file" ]; then
+        mkdir -vp "$target_dir"
+        cat <<'EOF' >"$target_file"
+[Unit]
+Description=Hyprland compositor session
+Documentation=man:systemd.special(7)
+BindsTo=graphical-session.target
+Wants=graphical-session-pre.target
+After=graphical-session-pre.target
+EOF
+        chown -R "$username:users" "/home/$username/.config/systemd"
+        log_changed "Created hyprland-session.target"
+    else
+        log_ok "hyprland-session.target already exists"
+    fi
+}
+
 ensure_pkgs_installed "$BASE_PKGS" "some basic" "pacman"
 
 ensure_user_selected
@@ -390,4 +411,5 @@ setup_final_doas
 ensure_bluetooth_service_enabled
 ensure_docker_service_enabled
 ensure_dns_priority_in_nsswitch
+ensure_hyprland_systemd_target_created
 cleanup_home
