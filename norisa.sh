@@ -13,7 +13,7 @@ readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison 
 # Architecture-specific packages
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
-    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel xf86-video-nouveau ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan nodejs-intelephense"
+    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan nodejs-intelephense steam ttf-liberation lib32-mesa vulkan-radeon lib32-vulkan-radeon vulkan-intel lib32-vulkan-intel gamemode lib32-gamemode mangohud lib32-mangohud"
     ARCH_AUR_PKGS="simple-mtpfs google-java-format code2prompt-bin"
 else
     # Asahi/ARM specific or generic alternatives
@@ -260,6 +260,19 @@ ensure_sudo_is_symlinked_to_doas() {
 # Server = https://git.noahvogt.com/noah/\$repo/raw/master/\$arch" >> /etc/pacman.conf
 # fi
 
+ensure_multilib_enabled() {
+    if [ "$ARCH" = "x86_64" ]; then
+        log_info "Ensuring multilib repository is enabled"
+        if grep -q "^#\[multilib\]" /etc/pacman.conf; then
+            sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' /etc/pacman.conf
+            pacman -Sy
+            log_changed "Enabled [multilib] repository"
+        else
+            log_ok "[multilib] repository is already enabled"
+        fi
+    fi
+}
+
 ensure_chaotic_aur_installed() {
     if [ "$ARCH" = "x86_64" ]; then
         if ! grep -q "^\s*\[chaotic-aur\]\s*$" /etc/pacman.conf; then
@@ -416,6 +429,7 @@ ensure_needed_dirs_created
 ensure_user_is_part_of_needed_groups
 ensure_sudo_is_symlinked_to_doas
 
+ensure_multilib_enabled
 ensure_chaotic_aur_installed
 ensure_paru_installed
 
