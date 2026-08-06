@@ -338,6 +338,17 @@ ensure_docker_service_enabled() {
     fi
 }
 
+ensure_ntp_enabled() {
+    log_info "Ensuring NTP and systemd-timesyncd are enabled"
+    if ! systemctl is-enabled systemd-timesyncd >/dev/null 2>&1; then
+        timedatectl set-ntp true
+        systemctl enable --now systemd-timesyncd
+        log_changed "Enabled NTP and systemd-timesyncd system-wide"
+    else
+        log_ok "NTP and systemd-timesyncd are already enabled"
+    fi
+}
+
 ensure_php_extensions_enabled() {
     log_info "Ensuring required PHP extensions are enabled"
     local changed=false
@@ -445,6 +456,7 @@ ensure_login_shell_is_zsh
 setup_final_doas
 ensure_bluetooth_service_enabled
 ensure_docker_service_enabled
+ensure_ntp_enabled
 ensure_dns_priority_in_nsswitch
 ensure_hyprland_systemd_target_created
 cleanup_home
