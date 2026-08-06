@@ -227,11 +227,12 @@ ensure_needed_dirs_created() {
         "/home/$username/dl"
         "/home/$username/vids"
         "/home/$username/mus"
-        "/home/$username/.local/bin"
-        "/home/$username/.config"
-        "/home/$username/.local/share"
-        "/home/$username/.local/src"
         "/home/$username/.local/"
+        "/home/$username/.local/bin"
+        "/home/$username/.local/share"
+        "/home/$username/.config"
+        "/home/$username/.cache"
+        "/home/$username/dox/src"
     )
     if ! chown -v "$username:users" "${needed_dirs[@]}" >/dev/null; then
         mkdir -Rvp "${needed_dirs[@]}"
@@ -399,13 +400,13 @@ ensure_dns_priority_in_nsswitch() {
 
 ensure_dotfiles_are_fetched_and_applied() {
     log_info "Ensuring dotfiles are fetched and applied"
-    if [ ! -d /home/"$username"/.local/src/dotfiles ]; then
+    if [ ! -d /home/"$username"/dox/src/dotfiles ]; then
         echo -e "\e[0;30;34mFetching dotfiles ...\e[0m"
-        cd_into /home/"$username"/.local/src
+        cd_into /home/"$username"/dox/src
         git clone https://git.noahvogt.com/noah/dotfiles.git || error_exit "Failed to clone dotfiles git repository"
-        cd_into /home/"$username"/.local/src/dotfiles
+        cd_into /home/"$username"/dox/src/dotfiles
         setup_temporary_doas
-        doas -u "$username" /home/"$username"/.local/src/dotfiles/apply-dotfiles
+        doas -u "$username" /home/"$username"/dox/src/dotfiles/apply-dotfiles
         log_changed "dotfiles were fetched and applied successfully"
     else
         log_ok "dotfiles were already fetched"
