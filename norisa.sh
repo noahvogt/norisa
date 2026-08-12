@@ -13,8 +13,29 @@ readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison 
 # Architecture-specific packages
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
-    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan nodejs-intelephense steam ttf-liberation lib32-mesa vulkan-radeon lib32-vulkan-radeon vulkan-intel lib32-vulkan-intel gamemode lib32-gamemode mangohud lib32-mangohud"
+    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan nodejs-intelephense"
+    GAMING_PKGS="steam ttf-liberation lib32-mesa vulkan-radeon lib32-vulkan-radeon vulkan-intel lib32-vulkan-intel gamemode lib32-gamemode mangohud lib32-mangohud"
     ARCH_AUR_PKGS="simple-mtpfs google-java-format code2prompt-bin"
+    
+    GAMING_WANTED=""
+    if [ -f /etc/norisa ]; then
+        GAMING_WANTED=$(grep "^gaming=" /etc/norisa | cut -d'=' -f2)
+    fi
+    
+    if [ -z "$GAMING_WANTED" ]; then
+        echo -e "\e[0;30;42m Do you want to install gaming packages (Steam, multilib, etc.)? [y/n] \e[0m"
+        read -rp " >>> " want_gaming
+        if [[ "$want_gaming" =~ ^[yY]$ ]]; then
+            GAMING_WANTED="yes"
+        else
+            GAMING_WANTED="no"
+        fi
+        echo "gaming=$GAMING_WANTED" >> /etc/norisa
+    fi
+
+    if [ "$GAMING_WANTED" = "yes" ]; then
+        ARCH_PKGS="$ARCH_PKGS $GAMING_PKGS"
+    fi
 else
     # Asahi/ARM specific or generic alternatives
     ARCH_PKGS="chromium"
@@ -262,7 +283,7 @@ ensure_sudo_is_symlinked_to_doas() {
 # fi
 
 ensure_multilib_enabled() {
-    if [ "$ARCH" = "x86_64" ]; then
+    if [ "$ARCH" = "x86_64" ] && [ "$GAMING_WANTED" = "yes" ]; then
         log_info "Ensuring multilib repository is enabled"
         if grep -q "^#\[multilib\]" /etc/pacman.conf; then
             sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' /etc/pacman.conf
