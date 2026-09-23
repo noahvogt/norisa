@@ -12,6 +12,7 @@ readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison 
 
 # Architecture-specific packages
 ARCH=$(uname -m)
+IS_APPLE_M1="no"
 if [ "$ARCH" = "x86_64" ]; then
     ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan nodejs-intelephense"
     GAMING_PKGS="steam ttf-liberation lib32-mesa vulkan-radeon lib32-vulkan-radeon vulkan-intel lib32-vulkan-intel gamemode lib32-gamemode mangohud lib32-mangohud"
@@ -43,7 +44,9 @@ else
 
     # Apple M1 family (t8103: M1, t600x: M1 Pro/Max/Ultra)
     if tr '\0' '\n' </proc/device-tree/compatible 2>/dev/null | grep -qE '^apple,(t8103|t600[0-2])$'; then
+        IS_APPLE_M1="yes"
         ARCH_PKGS="$ARCH_PKGS avd-fw"
+        ARCH_AUR_PKGS="$ARCH_AUR_PKGS libva-v4l2_request-asahi"
     fi
 fi
 
@@ -434,6 +437,19 @@ ensure_dns_priority_in_nsswitch() {
     fi
 }
 
+ensure_libva_driver_set_to_v4l2_request() {
+    log_info "Ensuring LIBVA_DRIVER_NAME=v4l2_request in /etc/environment"
+    if grep -q "^LIBVA_DRIVER_NAME=v4l2_request$" /etc/environment; then
+        log_ok "LIBVA_DRIVER_NAME is already set to v4l2_request"
+    elif grep -q "^LIBVA_DRIVER_NAME=" /etc/environment; then
+        sed -i 's/^LIBVA_DRIVER_NAME=.*/LIBVA_DRIVER_NAME=v4l2_request/' /etc/environment || error_exit "Failed to update LIBVA_DRIVER_NAME in /etc/environment"
+        log_changed "Changed LIBVA_DRIVER_NAME to v4l2_request in /etc/environment"
+    else
+        echo "LIBVA_DRIVER_NAME=v4l2_request" >>/etc/environment || error_exit "Failed to add LIBVA_DRIVER_NAME to /etc/environment"
+        log_changed "Added LIBVA_DRIVER_NAME=v4l2_request to /etc/environment"
+    fi
+}
+
 ensure_dotfiles_are_fetched_and_applied() {
     log_info "Ensuring dotfiles are fetched and applied"
     if [ ! -d /home/"$username"/dox/src/dotfiles ]; then
@@ -497,4 +513,7 @@ ensure_docker_service_enabled
 ensure_ntp_enabled
 ensure_dns_priority_in_nsswitch
 ensure_hyprland_systemd_target_created
+if [ "$IS_APPLE_M1" = "yes" ]; then
+    ensure_libva_driver_set_to_v4l2_request
+fi
 cleanup_home
