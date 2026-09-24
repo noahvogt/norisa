@@ -52,7 +52,7 @@ fi
 
 readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn mlocate fastfetch sqlx-cli biber texlive-langgerman wget docker-compose docker-buildx gnome-connections python-aiohttp ansible mariadb-clients psalm llvm uvicorn python-fastapi python-kivy pandoc-cli nmap kdenlive wol just pacman-contrib lm_sensors wlsunset jupyterlab-widgets azure-cli kubectl helm gns3-gui gns3-server glab $ARCH_PKGS"
 
-readonly AUR_PKGS="redshift dashbinsh cspell-lsp doasedit-alternative nodejs-cspell nvim-lazy lexend-fonts-git xwaylandvideobridge jdtls gradle-autowrap localsend-bin python-sklearn-onnx kotlin-language-server-bin ktlint-compose-rules ktlint pup beekeeper-studio-bin python-pyotp python-selenium wireshark-qt $ARCH_AUR_PKGS"
+readonly AUR_PKGS="fluffychat-color-emoji redshift dashbinsh cspell-lsp doasedit-alternative nodejs-cspell nvim-lazy lexend-fonts-git xwaylandvideobridge jdtls gradle-autowrap localsend-bin python-sklearn-onnx kotlin-language-server-bin ktlint-compose-rules ktlint pup beekeeper-studio-bin python-pyotp python-selenium wireshark-qt $ARCH_AUR_PKGS"
 
 readonly C_RESET='\e[0m'
 readonly C_INFO='\e[1;36m'   # Cyan
@@ -347,6 +347,20 @@ ensure_paru_installed() {
     fi
 }
 
+# Let paru build the PKGBUILDs in this repo's pkgbuilds/ like AUR packages
+ensure_paru_pkgbuild_repo_configured() {
+    if ! grep -q "^\s*\[norisa\]\s*$" /etc/paru.conf; then
+        echo "
+[norisa]
+Url = https://git.noahvogt.com/noah/norisa.git
+Path = pkgbuilds
+SkipReview" >>/etc/paru.conf
+        log_changed "Added norisa PKGBUILD repository to paru"
+    else
+        log_ok "norisa PKGBUILD repository is already configured in paru"
+    fi
+}
+
 ensure_global_zsh_installed() {
     log_info "Ensuring global zshenv"
     if grep -q "export ZDOTDIR=\$HOME/.config/zsh" /etc/zsh/zshenv; then
@@ -508,6 +522,7 @@ ensure_sudo_is_symlinked_to_doas
 ensure_multilib_enabled
 ensure_chaotic_aur_installed
 ensure_paru_installed
+ensure_paru_pkgbuild_repo_configured
 
 ensure_pkgs_installed "$MAIN_PKGS" "main packages" "pacman"
 ensure_user_is_part_of_docker_group
