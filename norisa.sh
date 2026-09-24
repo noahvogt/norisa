@@ -450,6 +450,18 @@ ensure_libva_driver_set_to_v4l2_request() {
     fi
 }
 
+ensure_mpv_uses_opengl() {
+    # vulkan dmabuf import of vaapi frames shows wrong colors on asahi
+    log_info "Ensuring mpv uses gpu-api=opengl in /etc/mpv/mpv.conf"
+    if grep -q "^gpu-api=opengl$" /etc/mpv/mpv.conf 2>/dev/null; then
+        log_ok "mpv already uses gpu-api=opengl"
+    else
+        mkdir -p /etc/mpv || error_exit "Failed to create /etc/mpv"
+        echo "gpu-api=opengl" >>/etc/mpv/mpv.conf || error_exit "Failed to add gpu-api=opengl to /etc/mpv/mpv.conf"
+        log_changed "Added gpu-api=opengl to /etc/mpv/mpv.conf"
+    fi
+}
+
 ensure_dotfiles_are_fetched_and_applied() {
     log_info "Ensuring dotfiles are fetched and applied"
     if [ ! -d /home/"$username"/dox/src/dotfiles ]; then
@@ -515,5 +527,6 @@ ensure_dns_priority_in_nsswitch
 ensure_hyprland_systemd_target_created
 if [ "$IS_APPLE_M1" = "yes" ]; then
     ensure_libva_driver_set_to_v4l2_request
+    ensure_mpv_uses_opengl
 fi
 cleanup_home
