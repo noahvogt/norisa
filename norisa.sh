@@ -347,17 +347,16 @@ ensure_paru_installed() {
     fi
 }
 
-# Let paru build the PKGBUILDs in this repo's pkgbuilds/ like AUR packages
+# Let paru build the PKGBUILDs from my pkgbuilds repo like AUR packages
 ensure_paru_pkgbuild_repo_configured() {
-    if ! grep -q "^\s*\[norisa\]\s*$" /etc/paru.conf; then
+    if ! grep -q "^\s*\[pkgbuilds\]\s*$" /etc/paru.conf; then
         echo "
-[norisa]
-Url = https://git.noahvogt.com/noah/norisa.git
-Path = pkgbuilds
+[pkgbuilds]
+Url = https://github.com/noahvogt/pkgbuilds.git
 SkipReview" >>/etc/paru.conf
-        log_changed "Added norisa PKGBUILD repository to paru"
+        log_changed "Added pkgbuilds PKGBUILD repository to paru"
     else
-        log_ok "norisa PKGBUILD repository is already configured in paru"
+        log_ok "pkgbuilds PKGBUILD repository is already configured in paru"
     fi
 }
 
