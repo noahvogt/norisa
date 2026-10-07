@@ -300,6 +300,17 @@ ensure_sudo_is_symlinked_to_doas() {
 # Server = https://git.noahvogt.com/noah/\$repo/raw/master/\$arch" >> /etc/pacman.conf
 # fi
 
+# paru inherits this, e.g. for colored PKGBUILD diffs on AUR updates
+ensure_pacman_color_enabled() {
+    log_info "Ensuring pacman color output is enabled"
+    if grep -q "^#Color\s*$" /etc/pacman.conf; then
+        sed -i 's/^#Color\s*$/Color/' /etc/pacman.conf
+        log_changed "Enabled pacman color output"
+    else
+        log_ok "pacman color output is already enabled"
+    fi
+}
+
 ensure_multilib_enabled() {
     if [ "$ARCH" = "x86_64" ] && [ "$GAMING_WANTED" = "yes" ]; then
         log_info "Ensuring multilib repository is enabled"
@@ -570,6 +581,7 @@ ensure_needed_dirs_created
 ensure_user_is_part_of_needed_groups
 ensure_sudo_is_symlinked_to_doas
 
+ensure_pacman_color_enabled
 ensure_multilib_enabled
 ensure_chaotic_aur_installed
 ensure_paru_installed
