@@ -50,7 +50,7 @@ else
     fi
 fi
 
-readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas python-pylatexenc pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn mlocate fastfetch sqlx-cli biber texlive-langgerman wget docker-compose docker-buildx gnome-connections python-aiohttp ansible mariadb-clients psalm llvm uvicorn python-fastapi python-kivy pandoc-cli nmap kdenlive wol just pacman-contrib lm_sensors wlsunset jupyterlab-widgets azure-cli kubectl helm gns3-gui gns3-server glab python-httpx2 networkmanager-openconnect github-cli $ARCH_PKGS"
+readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas python-pylatexenc pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn mlocate fastfetch sqlx-cli biber texlive-langgerman wget docker-compose docker-buildx gnome-connections python-aiohttp ansible mariadb-clients psalm llvm uvicorn python-fastapi python-kivy pandoc-cli nmap kdenlive wol just pacman-contrib lm_sensors wlsunset jupyterlab-widgets azure-cli kubectl helm gns3-gui gns3-server glab python-httpx2 networkmanager-openconnect github-cli zram-generator earlyoom systembus-notify $ARCH_PKGS"
 
 readonly AUR_PKGS="fluffychat-color-emoji openconnect-ms-auth redshift dashbinsh cspell-lsp doasedit-alternative nodejs-cspell nvim-lazy lexend-fonts-git xwaylandvideobridge jdtls gradle-autowrap localsend-bin python-sklearn-onnx kotlin-language-server-bin ktlint-compose-rules ktlint pup beekeeper-studio-bin python-pyotp python-jupytext python-selenium wireshark-qt python-jupytext marksman-git python-openstackclient $ARCH_AUR_PKGS"
 
@@ -402,6 +402,58 @@ ensure_ntp_enabled() {
     fi
 }
 
+ensure_zram_swap_configured() {
+    log_info "Ensuring zram swap is configured"
+    local config_file="/etc/systemd/zram-generator.conf"
+    local sysctl_file="/etc/sysctl.d/99-vm-zram-parameters.conf"
+    if [ ! -f "$config_file" ]; then
+        cat <<'EOF' >"$config_file" || error_exit "Failed to write $config_file"
+[zram0]
+zram-size = ram / 2
+compression-algorithm = zstd
+EOF
+        systemctl daemon-reload
+        systemctl start systemd-zram-setup@zram0.service || error_exit "Failed to start zram swap"
+        log_changed "Configured and started zram swap"
+    else
+        log_ok "zram swap is already configured"
+    fi
+    # recommended tuning for in-memory swap, see arch wiki zram article
+    if [ ! -f "$sysctl_file" ]; then
+        cat <<'EOF' >"$sysctl_file" || error_exit "Failed to write $sysctl_file"
+vm.swappiness = 180
+vm.watermark_boost_factor = 0
+vm.watermark_scale_factor = 125
+vm.page-cluster = 0
+EOF
+        sysctl -q -p "$sysctl_file"
+        log_changed "Applied zram sysctl tuning"
+    else
+        log_ok "zram sysctl tuning is already applied"
+    fi
+}
+
+ensure_earlyoom_enabled() {
+    # systemd-oomd kills whole cgroups, which would take down the entire
+    # hyprland session scope, so use earlyoom to kill single processes instead
+    log_info "Ensuring earlyoom is configured and enabled"
+    local config_file="/etc/default/earlyoom"
+    local wanted_args='EARLYOOM_ARGS="-r 3600 -n --avoid ^(Hyprland|waybar|swaync|kitty|systemd|sshd)$"'
+    if ! grep -qxF "$wanted_args" "$config_file" 2>/dev/null; then
+        echo "$wanted_args" >"$config_file" || error_exit "Failed to write $config_file"
+        systemctl restart earlyoom.service 2>/dev/null
+        log_changed "Configured earlyoom"
+    else
+        log_ok "earlyoom is already configured"
+    fi
+    if ! systemctl is-enabled earlyoom.service >/dev/null 2>&1; then
+        systemctl enable --now earlyoom.service
+        log_changed "Enabled earlyoom.service system-wide"
+    else
+        log_ok "earlyoom service is already enabled"
+    fi
+}
+
 ensure_php_extensions_enabled() {
     log_info "Ensuring required PHP extensions are enabled"
     local changed=false
@@ -537,6 +589,8 @@ setup_final_doas
 ensure_bluetooth_service_enabled
 ensure_docker_service_enabled
 ensure_ntp_enabled
+ensure_zram_swap_configured
+ensure_earlyoom_enabled
 ensure_dns_priority_in_nsswitch
 ensure_hyprland_systemd_target_created
 if [ "$IS_APPLE_M1" = "yes" ]; then
