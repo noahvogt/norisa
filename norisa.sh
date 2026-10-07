@@ -429,7 +429,19 @@ EOF
     else
         log_ok "zram swap is already configured"
     fi
-    # recommended tuning for in-memory swap, see arch wiki zram article
+    # recommended tuning for in-memory swap, see arch wiki zram article:
+    # - swappiness (0-200) is the relative cost of swapping anon memory vs
+    #   dropping file cache (100 = equal). zram is cheaper than disk I/O, so
+    #   180 swaps idle anon pages eagerly and keeps more file cache. also
+    #   applies to disk swap on machines that have it, but zram has higher
+    #   priority so it fills first
+    # - watermark_boost_factor = 0 disables extra reclaim after fragmentation
+    #   events, which would needlessly push pages into zram
+    # - watermark_scale_factor = 125 starts background reclaim (kswapd)
+    #   earlier, so compression happens there instead of stalling the
+    #   allocating process
+    # - page-cluster = 0 reads one page per swap-in instead of 8; readahead
+    #   only helps on disks with seek cost, zram has none
     if [ ! -f "$sysctl_file" ]; then
         cat <<'EOF' >"$sysctl_file" || error_exit "Failed to write $sysctl_file"
 vm.swappiness = 180
