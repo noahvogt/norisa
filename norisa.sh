@@ -14,7 +14,7 @@ readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison 
 ARCH=$(uname -m)
 IS_APPLE_M1="no"
 if [ "$ARCH" = "x86_64" ]; then
-    ARCH_PKGS="intel-ucode amd-ucode fwupd xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan nodejs-intelephense"
+    ARCH_PKGS="intel-ucode amd-ucode fwupd tlp xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan nodejs-intelephense"
     GAMING_PKGS="steam ttf-liberation lib32-mesa vulkan-radeon lib32-vulkan-radeon vulkan-intel lib32-vulkan-intel gamemode lib32-gamemode mangohud lib32-mangohud"
     ARCH_AUR_PKGS="simple-mtpfs code2prompt-bin"
 
@@ -50,7 +50,7 @@ else
     fi
 fi
 
-readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas python-pylatexenc pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn plocate fastfetch sqlx-cli biber texlive-langgerman wget docker-compose docker-buildx gnome-connections python-aiohttp ansible mariadb-clients psalm llvm uvicorn python-fastapi python-kivy pandoc-cli nmap kdenlive wol just pacman-contrib lm_sensors wlsunset jupyterlab-widgets azure-cli kubectl helm gns3-gui gns3-server glab python-httpx2 networkmanager-openconnect github-cli zram-generator earlyoom systembus-notify stress-ng $ARCH_PKGS"
+readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei hypridle texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas python-pylatexenc pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn plocate fastfetch sqlx-cli biber texlive-langgerman wget docker-compose docker-buildx gnome-connections python-aiohttp ansible mariadb-clients psalm llvm uvicorn python-fastapi python-kivy pandoc-cli nmap kdenlive wol just pacman-contrib lm_sensors wlsunset jupyterlab-widgets azure-cli kubectl helm gns3-gui gns3-server glab python-httpx2 networkmanager-openconnect github-cli zram-generator earlyoom systembus-notify stress-ng $ARCH_PKGS"
 
 readonly AUR_PKGS="fluffychat-color-emoji openconnect-ms-auth redshift dashbinsh cspell-lsp doasedit-alternative nodejs-cspell nvim-lazy lexend-fonts-git xwaylandvideobridge jdtls gradle-autowrap localsend-bin python-sklearn-onnx kotlin-language-server-bin ktlint-compose-rules ktlint pup beekeeper-studio-bin python-pyotp python-jupytext python-selenium wireshark-qt python-jupytext marksman-git python-openstackclient $ARCH_AUR_PKGS"
 
@@ -554,6 +554,22 @@ ensure_luks_discard_allowed() {
     fi
 }
 
+# make builds serially without -j. makepkg sources its config as bash on every
+# build, so $(nproc) is evaluated then and matches each machine's thread count
+ensure_makeflags_use_all_threads() {
+    log_info "Ensuring makepkg builds with all threads"
+    local config_file="/etc/makepkg.conf.d/norisa.conf"
+    # shellcheck disable=SC2016 # nproc is expanded by makepkg, not here
+    local content='MAKEFLAGS="-j$(nproc)"'
+    if [[ ! -f "$config_file" ]] || [[ "$(cat "$config_file")" != "$content" ]]; then
+        mkdir -p /etc/makepkg.conf.d || error_exit "Failed to create /etc/makepkg.conf.d"
+        printf "%s\n" "$content" >"$config_file" || error_exit "Failed to write $config_file"
+        log_changed "Set MAKEFLAGS to use all threads"
+    else
+        log_ok "MAKEFLAGS already use all threads"
+    fi
+}
+
 # keep one older version of each package for downgrades and drop the cache of
 # uninstalled packages. the default (-r) keeps 3 versions
 ensure_paccache_timer_configured() {
@@ -661,6 +677,48 @@ ensure_updatedb_prunenames_set() {
     else
         echo "$wanted_line" >>"$config_file" || error_exit "Failed to update $config_file"
         log_changed "Added updatedb PRUNENAMES"
+    fi
+}
+
+has_system_battery() {
+    # peripherals like wireless mice also report a battery, but with
+    # scope=Device, so they do not make a desktop count as a laptop
+    local supply
+    for supply in /sys/class/power_supply/*; do
+        if [ "$(cat "$supply/type" 2>/dev/null)" = "Battery" ] &&
+            [ "$(cat "$supply/scope" 2>/dev/null)" != "Device" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# only worth it on battery: on AC tlp uses performance settings anyway, but
+# its usb autosuspend stays active and can make some usb devices drop out.
+# tlp manages radio state itself, so systemd-rfkill is masked as its docs say
+ensure_tlp_enabled_on_laptops() {
+    if [ "$ARCH" != "x86_64" ]; then
+        return
+    fi
+    log_info "Ensuring tlp is enabled on laptops"
+    if ! has_system_battery; then
+        log_ok "No system battery found, leaving tlp disabled"
+        return
+    fi
+    local unit
+    for unit in systemd-rfkill.service systemd-rfkill.socket; do
+        if [ "$(systemctl is-enabled "$unit" 2>/dev/null)" != "masked" ]; then
+            systemctl mask "$unit" || error_exit "Failed to mask $unit"
+            log_changed "Masked $unit for tlp"
+        else
+            log_ok "$unit is already masked"
+        fi
+    done
+    if ! systemctl is-enabled tlp.service >/dev/null 2>&1; then
+        systemctl enable --now tlp.service || error_exit "Failed to enable tlp.service"
+        log_changed "Enabled tlp.service system-wide"
+    else
+        log_ok "tlp service is already enabled"
     fi
 }
 
@@ -785,6 +843,7 @@ ensure_multilib_enabled
 ensure_chaotic_aur_installed
 ensure_paru_installed
 ensure_paru_pkgbuild_repo_configured
+ensure_makeflags_use_all_threads
 
 ensure_pkgs_installed "$MAIN_PKGS" "main packages" "pacman"
 ensure_user_is_part_of_docker_group
@@ -809,6 +868,7 @@ ensure_paccache_timer_configured
 ensure_journald_size_limited
 ensure_smartd_configured
 ensure_updatedb_prunenames_set
+ensure_tlp_enabled_on_laptops
 ensure_dns_priority_in_nsswitch
 ensure_hyprland_systemd_target_created
 if [ "$IS_APPLE_M1" = "yes" ]; then
