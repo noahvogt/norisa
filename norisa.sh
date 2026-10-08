@@ -102,7 +102,7 @@ ensure_pkgs_installed() {
         if [[ "$3" == *doas* ]]; then
             setup_temporary_doas
         fi
-        $3 -Sy --noconfirm --needed $MISSING_PKGS || pkg_install_error_exit
+        $3 -Syu --noconfirm --needed $MISSING_PKGS || pkg_install_error_exit
         log_changed "$2 packages are now installed"
     else
         log_ok "$2 packages are already installed"
