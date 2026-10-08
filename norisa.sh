@@ -580,6 +580,24 @@ ExecStart=/usr/bin/paccache -ruk0"
     fi
 }
 
+# the default limit is 10% of the filesystem capped at 4G. 1G keeps roughly two
+# months of logs, enough to compare behaviour before and after an update
+ensure_journald_size_limited() {
+    log_info "Ensuring journald size is limited"
+    local dropin_dir="/etc/systemd/journald.conf.d"
+    local dropin_file="$dropin_dir/norisa.conf"
+    local content="[Journal]
+SystemMaxUse=1G"
+    if [[ ! -f "$dropin_file" ]] || [[ "$(cat "$dropin_file")" != "$content" ]]; then
+        mkdir -p "$dropin_dir" || error_exit "Failed to create $dropin_dir"
+        printf "%s\n" "$content" >"$dropin_file" || error_exit "Failed to write $dropin_file"
+        systemctl restart systemd-journald || error_exit "Failed to restart systemd-journald"
+        log_changed "Limited journald to 1G"
+    else
+        log_ok "journald size is already limited"
+    fi
+}
+
 ensure_php_extensions_enabled() {
     log_info "Ensuring required PHP extensions are enabled"
     local changed=false
@@ -722,6 +740,7 @@ ensure_earlyoom_enabled
 ensure_fstrim_timer_enabled
 ensure_luks_discard_allowed
 ensure_paccache_timer_configured
+ensure_journald_size_limited
 ensure_dns_priority_in_nsswitch
 ensure_hyprland_systemd_target_created
 if [ "$IS_APPLE_M1" = "yes" ]; then
