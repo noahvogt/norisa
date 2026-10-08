@@ -59,7 +59,7 @@ if [ "$AES_NI" = "yes" ]; then
     sed -i 's|^HOOKS=.*|HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck)|' /etc/mkinitcpio.conf
     mkinitcpio -P
 
-    sed -i "s|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"rd.luks.name=${LUKS_UUID}=cryptroot rd.luks.key=${LUKS_UUID}=/crypto_keyfile.bin\"|" /etc/default/grub
+    sed -i "s|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"rd.luks.name=${LUKS_UUID}=cryptroot rd.luks.key=${LUKS_UUID}=/crypto_keyfile.bin rd.luks.options=discard\"|" /etc/default/grub
     sed -i 's/#GRUB_ENABLE_CRYPTODISK/GRUB_ENABLE_CRYPTODISK/' /etc/default/grub
     SWAP_CIPHER="aes-cbc-essiv:sha256"
 else
@@ -67,7 +67,7 @@ else
     sed -i 's|^HOOKS=.*|HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck)|' /etc/mkinitcpio.conf
     mkinitcpio -P
 
-    sed -i "s|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"rd.luks.name=${LUKS_UUID}=cryptroot\"|" /etc/default/grub
+    sed -i "s|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"rd.luks.name=${LUKS_UUID}=cryptroot rd.luks.options=discard\"|" /etc/default/grub
     SWAP_CIPHER="xchacha12,aes-adiantum-plain64"
 fi
 

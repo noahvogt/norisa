@@ -427,8 +427,9 @@ ensure_networkd_disabled_for_networkmanager() {
         log_ok "NetworkManager is not enabled, leaving systemd-networkd alone"
         return
     fi
-    # disabling the service also disables its sockets via Also=, but not
-    # wait-online, which is wanted by network-online.target on its own
+    # disabling the service also disables its sockets, network-generator and
+    # wait-online via Also=. wait-online is still checked on its own, since it
+    # can be enabled without the service
     local units="systemd-networkd.service systemd-networkd-wait-online.service"
     local enabled_units=""
     for unit in $units; do
@@ -517,6 +518,65 @@ ensure_earlyoom_enabled() {
         log_changed "Enabled earlyoom.service system-wide"
     else
         log_ok "earlyoom service is already enabled"
+    fi
+}
+
+# weekly TRIM tells the SSD which blocks are free, so its garbage collection
+# does not keep copying stale data. Persistent=true in the shipped timer
+# catches up after boot or resume if the laptop was off at the scheduled time
+ensure_fstrim_timer_enabled() {
+    log_info "Ensuring fstrim.timer is enabled"
+    if ! systemctl is-enabled fstrim.timer >/dev/null 2>&1; then
+        systemctl enable --now fstrim.timer || error_exit "Failed to enable fstrim.timer"
+        log_changed "Enabled fstrim.timer system-wide"
+    else
+        log_ok "fstrim.timer is already enabled"
+    fi
+}
+
+# dm-crypt drops discards by default, so fstrim would not reach the SSD.
+# allowing them leaks which blocks are unused (not their content), which is
+# acceptable here. applies to all luks devices unlocked in the initramfs and
+# takes effect on the next boot
+ensure_luks_discard_allowed() {
+    local grub_file="/etc/default/grub"
+    if ! grep -q '^GRUB_CMDLINE_LINUX=.*rd\.luks\.name=' "$grub_file" 2>/dev/null; then
+        return
+    fi
+    log_info "Ensuring discards are allowed on the LUKS root"
+    if grep -q '^GRUB_CMDLINE_LINUX=.*rd\.luks\.options=[^ "]*discard' "$grub_file"; then
+        log_ok "LUKS discards are already allowed"
+    else
+        sed -i 's/^\(GRUB_CMDLINE_LINUX="[^"]*\)"/\1 rd.luks.options=discard"/' "$grub_file" ||
+            error_exit "Failed to add rd.luks.options=discard to $grub_file"
+        grub-mkconfig -o /boot/grub/grub.cfg || error_exit "Failed to regenerate grub config"
+        log_changed "Allowed LUKS discards via rd.luks.options=discard (active after reboot)"
+    fi
+}
+
+# keep one older version of each package for downgrades and drop the cache of
+# uninstalled packages. the default (-r) keeps 3 versions
+ensure_paccache_timer_configured() {
+    log_info "Ensuring paccache.timer is configured and enabled"
+    local dropin_dir="/etc/systemd/system/paccache.service.d"
+    local dropin_file="$dropin_dir/norisa.conf"
+    local content="[Service]
+ExecStart=
+ExecStart=/usr/bin/paccache -rk2
+ExecStart=/usr/bin/paccache -ruk0"
+    if [[ ! -f "$dropin_file" ]] || [[ "$(cat "$dropin_file")" != "$content" ]]; then
+        mkdir -p "$dropin_dir" || error_exit "Failed to create $dropin_dir"
+        printf "%s\n" "$content" >"$dropin_file" || error_exit "Failed to write $dropin_file"
+        systemctl daemon-reload
+        log_changed "Configured paccache to keep 2 versions and drop uninstalled packages"
+    else
+        log_ok "paccache is already configured"
+    fi
+    if ! systemctl is-enabled paccache.timer >/dev/null 2>&1; then
+        systemctl enable --now paccache.timer || error_exit "Failed to enable paccache.timer"
+        log_changed "Enabled paccache.timer system-wide"
+    else
+        log_ok "paccache.timer is already enabled"
     fi
 }
 
@@ -659,6 +719,9 @@ ensure_networkd_disabled_for_networkmanager
 ensure_ntp_enabled
 ensure_zram_swap_configured
 ensure_earlyoom_enabled
+ensure_fstrim_timer_enabled
+ensure_luks_discard_allowed
+ensure_paccache_timer_configured
 ensure_dns_priority_in_nsswitch
 ensure_hyprland_systemd_target_created
 if [ "$IS_APPLE_M1" = "yes" ]; then
