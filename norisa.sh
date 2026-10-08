@@ -14,7 +14,7 @@ readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison 
 ARCH=$(uname -m)
 IS_APPLE_M1="no"
 if [ "$ARCH" = "x86_64" ]; then
-    ARCH_PKGS="xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan nodejs-intelephense"
+    ARCH_PKGS="intel-ucode amd-ucode xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan nodejs-intelephense"
     GAMING_PKGS="steam ttf-liberation lib32-mesa vulkan-radeon lib32-vulkan-radeon vulkan-intel lib32-vulkan-intel gamemode lib32-gamemode mangohud lib32-mangohud"
     ARCH_AUR_PKGS="simple-mtpfs code2prompt-bin"
 
@@ -399,13 +399,49 @@ ensure_bluetooth_service_enabled() {
     fi
 }
 
-ensure_docker_service_enabled() {
-    log_info "Ensuring Docker service is enabled"
-    if ! systemctl is-enabled docker.service >/dev/null 2>&1; then
-        systemctl enable docker.service
-        log_changed "Enabled docker.service system-wide"
+# start dockerd on first use of the docker socket instead of at boot, which
+# saves boot time and the RAM of an idle dockerd + containerd. containers with
+# a restart policy therefore only come back up after the first docker command
+ensure_docker_socket_enabled() {
+    log_info "Ensuring Docker is socket-activated"
+    if ! systemctl is-enabled docker.socket >/dev/null 2>&1; then
+        systemctl enable --now docker.socket || error_exit "Failed to enable docker.socket"
+        log_changed "Enabled docker.socket system-wide"
     else
-        log_ok "Docker service is already enabled"
+        log_ok "docker.socket is already enabled"
+    fi
+    if systemctl is-enabled docker.service >/dev/null 2>&1; then
+        systemctl disable docker.service || error_exit "Failed to disable docker.service"
+        log_changed "Disabled docker.service at boot"
+    else
+        log_ok "docker.service is already disabled at boot"
+    fi
+}
+
+# some images (e.g. asahi alarm) enable systemd-networkd alongside
+# NetworkManager. both then fight over the same interfaces, and
+# systemd-networkd-wait-online times out for 2 minutes on every boot
+ensure_networkd_disabled_for_networkmanager() {
+    log_info "Ensuring systemd-networkd does not run alongside NetworkManager"
+    if ! systemctl is-enabled NetworkManager.service >/dev/null 2>&1; then
+        log_ok "NetworkManager is not enabled, leaving systemd-networkd alone"
+        return
+    fi
+    # disabling the service also disables its sockets via Also=, but not
+    # wait-online, which is wanted by network-online.target on its own
+    local units="systemd-networkd.service systemd-networkd-wait-online.service"
+    local enabled_units=""
+    for unit in $units; do
+        if systemctl is-enabled "$unit" >/dev/null 2>&1; then
+            enabled_units="$enabled_units $unit"
+        fi
+    done
+    if [ -n "$enabled_units" ]; then
+        # shellcheck disable=SC2086
+        systemctl disable $enabled_units || error_exit "Failed to disable systemd-networkd"
+        log_changed "Disabled$enabled_units"
+    else
+        log_ok "systemd-networkd is already disabled"
     fi
 }
 
@@ -618,7 +654,8 @@ ensure_history_file_exists
 ensure_login_shell_is_zsh
 setup_final_doas
 ensure_bluetooth_service_enabled
-ensure_docker_service_enabled
+ensure_docker_socket_enabled
+ensure_networkd_disabled_for_networkmanager
 ensure_ntp_enabled
 ensure_zram_swap_configured
 ensure_earlyoom_enabled
