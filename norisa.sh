@@ -7,6 +7,11 @@
 # - ~30 GB of free disk space
 # working 1.) base 2.) linux packages
 
+if [ "$EUID" -ne 0 ]; then
+    echo "norisa.sh must be run as root" >&2
+    exit 1
+fi
+
 # Install opendoas and (base-devel, devtools minus sudo), libxft, cargo
 readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison debugedit fakeroot file findutils flex gawk gcc gettext grep groff gzip libtool m4 make pacman patch pkgconf sed texinfo which libxft breezy coreutils curl diffutils expac git glow gum jq mercurial openssh parallel reuse rsync subversion util-linux cargo"
 
@@ -172,34 +177,16 @@ choose_user() {
     done
 }
 
-ensure_user_is_part_of_needed_groups() {
-    log_info "Verify $username is part of video and input groups"
-    if ! groups "$username" | grep "input" | grep -q "video"; then
-        log_info "Adding $username to video and input groups"
-        usermod -aG video "$username"
-        usermod -aG input "$username"
+# groups that come with a package (docker, wireshark) only exist after it is
+# installed, so call this after the matching ensure_pkgs_installed
+ensure_user_is_part_of_group() {
+    local group="$1"
+    log_info "Verify $username is part of $group group"
+    if id -nG "$username" | tr ' ' '\n' | grep -qxF "$group"; then
+        log_ok "$username is already part of the $group group"
     else
-        log_ok "$username is already part of these groups"
-    fi
-}
-
-ensure_user_is_part_of_docker_group() {
-    log_info "Verify $username is part of docker group"
-    if ! groups "$username" | grep "docker"; then
-        log_info "Adding $username to docker group"
-        usermod -aG docker "$username"
-    else
-        log_ok "$username is already part of the docker group"
-    fi
-}
-
-ensure_user_is_part_of_wireshark_group() {
-    log_info "Verify $username is part of wireshark group"
-    if ! groups "$username" | grep "wireshark"; then
-        log_info "Adding $username to wireshark group"
-        usermod -aG wireshark "$username"
-    else
-        log_ok "$username is already part of the wireshark group"
+        usermod -aG "$group" "$username" || error_exit "Failed to add $username to $group group"
+        log_changed "Added $username to $group group"
     fi
 }
 
@@ -222,13 +209,14 @@ ensure_history_file_exists() {
 
 ensure_login_shell_is_zsh() {
     log_info "Ensure login shell is zsh"
-    if ! grep "^$username.*::/home/$username" /etc/passwd | sed 's/^.*://' |
-        grep -q "^$(which zsh)$"; then
-        echo -e "\e[0;30;34mSetting default shell to $(which zsh)...\e[0m"
-        chsh -s "$(which zsh)" "$username" || exit 1
-        log_changed "changed shell to zsh"
-    else
+    local zsh_path
+    zsh_path="$(command -v zsh)" || error_exit "zsh is not installed"
+    if [ "$(getent passwd "$username" | cut -d: -f7)" = "$zsh_path" ]; then
         log_ok "login shell is already zsh"
+    else
+        echo -e "\e[0;30;34mSetting default shell to $zsh_path...\e[0m"
+        chsh -s "$zsh_path" "$username" || error_exit "Failed to change login shell of $username to zsh"
+        log_changed "changed shell to zsh"
     fi
 }
 
@@ -295,11 +283,14 @@ ensure_needed_dirs_created() {
 
 ensure_sudo_is_symlinked_to_doas() {
     log_info "Ensure sudo is symlinked to doas"
-    if [ ! -f /usr/bin/sudo ]; then
-        ln -s /usr/bin/doas /usr/bin/sudo
-        log_changed "sudo was symlinked to doas"
-    else
+    if [ "$(readlink /usr/bin/sudo)" = /usr/bin/doas ]; then
         log_ok "sudo is already symlinked to doas"
+    elif [ -e /usr/bin/sudo ] || [ -L /usr/bin/sudo ]; then
+        # e.g. the sudo package, which is still usable alongside doas
+        log_ok "sudo is not symlinked to doas, but /usr/bin/sudo exists, leaving it alone"
+    else
+        ln -s /usr/bin/doas /usr/bin/sudo || error_exit "Failed to symlink sudo to doas"
+        log_changed "sudo was symlinked to doas"
     fi
 }
 
@@ -336,18 +327,27 @@ ensure_multilib_enabled() {
     fi
 }
 
+# the repo is only added to pacman.conf once its key and mirrorlist are
+# installed, otherwise every later pacman call would fail on it
 ensure_chaotic_aur_installed() {
-    if [ "$ARCH" = "x86_64" ]; then
-        if ! grep -q "^\s*\[chaotic-aur\]\s*$" /etc/pacman.conf; then
-            echo -e "\e[0;30;34mAdding the chaotic aur repo ...\e[0m"
-            pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-            pacman-key --lsign-key 3056513887B78AEB
-            pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
-            pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
-            echo "[chaotic-aur]
-    Include = /etc/pacman.d/chaotic-mirrorlist" >>/etc/pacman.conf
-        fi
+    if [ "$ARCH" != "x86_64" ]; then
+        return
     fi
+    log_info "Ensuring chaotic-aur repository is added"
+    if grep -q "^\s*\[chaotic-aur\]\s*$" /etc/pacman.conf; then
+        log_ok "chaotic-aur repository is already added"
+        return
+    fi
+    pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com ||
+        error_exit "Failed to receive chaotic-aur key"
+    pacman-key --lsign-key 3056513887B78AEB || error_exit "Failed to locally sign chaotic-aur key"
+    pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' ||
+        pkg_install_error_exit
+    pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' ||
+        pkg_install_error_exit
+    echo "[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist" >>/etc/pacman.conf || error_exit "Failed to add chaotic-aur to /etc/pacman.conf"
+    log_changed "Added chaotic-aur repository"
 }
 
 # Install AUR Helper (paru as paru-bin is out-of-date)
@@ -355,13 +355,14 @@ ensure_paru_installed() {
     log_info "Ensuring paru is installed"
     if ! command -v paru >/dev/null 2>&1; then
         if [ "$ARCH" = "x86_64" ] && pacman -Si paru >/dev/null 2>&1; then
-            pacman -S --noconfirm paru
+            pacman -S --noconfirm paru || pkg_install_error_exit
         else
             setup_temporary_doas
             log_info "Building paru from source..."
             temp_dir=$(mktemp -d)
             chown "$username:users" "$temp_dir"
-            doas -u "$username" bash -c "cd $temp_dir && git clone https://aur.archlinux.org/paru.git && cd paru && makepkg --noconfirm"
+            doas -u "$username" bash -c "cd $temp_dir && git clone https://aur.archlinux.org/paru.git && cd paru && makepkg --noconfirm" ||
+                error_exit "Failed to build paru"
             pacman -U --noconfirm "$temp_dir"/paru/*.pkg.tar.* || pkg_install_error_exit
         fi
         log_changed "Installed AUR helper (paru)"
@@ -843,7 +844,8 @@ ensure_user_selected
 # final one even if a step exits early, until it is set regularly below
 trap setup_final_doas EXIT
 ensure_needed_dirs_created
-ensure_user_is_part_of_needed_groups
+ensure_user_is_part_of_group video
+ensure_user_is_part_of_group input
 ensure_sudo_is_symlinked_to_doas
 
 ensure_pacman_color_enabled
@@ -854,10 +856,10 @@ ensure_paru_pkgbuild_repo_configured
 ensure_makeflags_use_all_threads
 
 ensure_pkgs_installed "$MAIN_PKGS" "main packages" "pacman"
-ensure_user_is_part_of_docker_group
+ensure_user_is_part_of_group docker
 ensure_php_extensions_enabled
 ensure_pkgs_installed "$AUR_PKGS" "AUR" "doas -u $username paru --mflags --ignorearch"
-ensure_user_is_part_of_wireshark_group
+ensure_user_is_part_of_group wireshark
 ensure_dotfiles_are_fetched_and_applied
 
 ensure_global_zsh_installed
