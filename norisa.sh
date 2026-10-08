@@ -14,7 +14,7 @@ readonly BASE_PKGS="archlinux-keyring opendoas autoconf automake binutils bison 
 ARCH=$(uname -m)
 IS_APPLE_M1="no"
 if [ "$ARCH" = "x86_64" ]; then
-    ARCH_PKGS="intel-ucode amd-ucode xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan nodejs-intelephense"
+    ARCH_PKGS="intel-ucode amd-ucode fwupd xf86-video-vesa xf86-video-fbdev xf86-video-amdgpu xf86-video-intel ungoogled-chromium-bin obs-studio brave-bin ghostty ttf-material-symbols-variable-git nomacs wlogout unifetch shellcheck yt-dlp logseq-desktop ipscan nodejs-intelephense"
     GAMING_PKGS="steam ttf-liberation lib32-mesa vulkan-radeon lib32-vulkan-radeon vulkan-intel lib32-vulkan-intel gamemode lib32-gamemode mangohud lib32-mangohud"
     ARCH_AUR_PKGS="simple-mtpfs code2prompt-bin"
 
@@ -50,7 +50,7 @@ else
     fi
 fi
 
-readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas python-pylatexenc pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn mlocate fastfetch sqlx-cli biber texlive-langgerman wget docker-compose docker-buildx gnome-connections python-aiohttp ansible mariadb-clients psalm llvm uvicorn python-fastapi python-kivy pandoc-cli nmap kdenlive wol just pacman-contrib lm_sensors wlsunset jupyterlab-widgets azure-cli kubectl helm gns3-gui gns3-server glab python-httpx2 networkmanager-openconnect github-cli zram-generator earlyoom systembus-notify stress-ng $ARCH_PKGS"
+readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei hypridle tlp texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas python-pylatexenc pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn plocate fastfetch sqlx-cli biber texlive-langgerman wget docker-compose docker-buildx gnome-connections python-aiohttp ansible mariadb-clients psalm llvm uvicorn python-fastapi python-kivy pandoc-cli nmap kdenlive wol just pacman-contrib lm_sensors wlsunset jupyterlab-widgets azure-cli kubectl helm gns3-gui gns3-server glab python-httpx2 networkmanager-openconnect github-cli zram-generator earlyoom systembus-notify stress-ng $ARCH_PKGS"
 
 readonly AUR_PKGS="fluffychat-color-emoji openconnect-ms-auth redshift dashbinsh cspell-lsp doasedit-alternative nodejs-cspell nvim-lazy lexend-fonts-git xwaylandvideobridge jdtls gradle-autowrap localsend-bin python-sklearn-onnx kotlin-language-server-bin ktlint-compose-rules ktlint pup beekeeper-studio-bin python-pyotp python-jupytext python-selenium wireshark-qt python-jupytext marksman-git python-openstackclient $ARCH_AUR_PKGS"
 
@@ -598,6 +598,72 @@ SystemMaxUse=1G"
     fi
 }
 
+# smartd checks drive health (critical warning, spare, media errors) every 30
+# min. there is no mailer, so warnings are sent over the system bus and shown
+# by systembus-notify in the user session, like earlyoom kills. temperature
+# only warns at 70 C, without logging every change. unsupported checks (e.g.
+# the error log and self-tests on apple nvme) are skipped by smartd itself
+ensure_smartd_configured() {
+    log_info "Ensuring smartd is configured and enabled"
+    local config_file="/etc/smartd.conf"
+    local notify_script="/usr/local/bin/smartd-notify"
+    local wanted_line="DEVICESCAN -a -W 0,0,70 -m <nomailer> -M exec $notify_script"
+    # shellcheck disable=SC2016 # SMARTD_* expand when the script runs
+    local notify_content='#!/bin/sh
+# called by smartd (-M exec) with the warning in SMARTD_* env vars
+exec dbus-send --system / net.nuetzlich.SystemNotifications.Notify \
+    "string:SMART $SMARTD_FAILTYPE on $SMARTD_DEVICE" "string:$SMARTD_MESSAGE"'
+    local changed=false
+
+    if [[ ! -f "$notify_script" ]] ||
+        [[ "$(cat "$notify_script")" != "$notify_content" ]] ||
+        [[ "$(stat -c "%a" "$notify_script")" != "755" ]]; then
+        printf "%s\n" "$notify_content" >"$notify_script" || error_exit "Failed to write $notify_script"
+        chmod 755 "$notify_script"
+        changed=true
+    fi
+    if ! grep -qxF "$wanted_line" "$config_file"; then
+        # smartd ignores everything after the first DEVICESCAN line
+        if grep -q "^DEVICESCAN" "$config_file"; then
+            sed -i "0,/^DEVICESCAN.*/s||$wanted_line|" "$config_file" ||
+                error_exit "Failed to update $config_file"
+        else
+            echo "$wanted_line" >>"$config_file" || error_exit "Failed to update $config_file"
+        fi
+        changed=true
+    fi
+    if [ "$changed" = true ]; then
+        systemctl try-restart smartd.service
+        log_changed "Configured smartd with desktop notifications"
+    else
+        log_ok "smartd is already configured"
+    fi
+
+    if ! systemctl is-enabled smartd.service >/dev/null 2>&1; then
+        systemctl enable --now smartd.service || error_exit "Failed to enable smartd.service"
+        log_changed "Enabled smartd.service system-wide"
+    else
+        log_ok "smartd service is already enabled"
+    fi
+}
+
+# keep caches and dependency trees out of the locate database, they are the
+# bulk of all entries and never what you search for
+ensure_updatedb_prunenames_set() {
+    log_info "Ensuring updatedb skips cache and dependency directories"
+    local config_file="/etc/updatedb.conf"
+    local wanted_line='PRUNENAMES = ".git .hg .svn node_modules __pycache__ .venv .cache"'
+    if grep -qxF "$wanted_line" "$config_file"; then
+        log_ok "updatedb PRUNENAMES are already set"
+    elif grep -q "^PRUNENAMES" "$config_file"; then
+        sed -i "s|^PRUNENAMES.*|$wanted_line|" "$config_file" || error_exit "Failed to update $config_file"
+        log_changed "Updated updatedb PRUNENAMES"
+    else
+        echo "$wanted_line" >>"$config_file" || error_exit "Failed to update $config_file"
+        log_changed "Added updatedb PRUNENAMES"
+    fi
+}
+
 ensure_php_extensions_enabled() {
     log_info "Ensuring required PHP extensions are enabled"
     local changed=false
@@ -741,6 +807,8 @@ ensure_fstrim_timer_enabled
 ensure_luks_discard_allowed
 ensure_paccache_timer_configured
 ensure_journald_size_limited
+ensure_smartd_configured
+ensure_updatedb_prunenames_set
 ensure_dns_priority_in_nsswitch
 ensure_hyprland_systemd_target_created
 if [ "$IS_APPLE_M1" = "yes" ]; then
