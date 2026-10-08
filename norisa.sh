@@ -50,7 +50,7 @@ else
     fi
 fi
 
-readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei hypridle texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas python-pylatexenc pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn plocate fastfetch sqlx-cli biber texlive-langgerman wget docker-compose docker-buildx gnome-connections python-aiohttp ansible mariadb-clients psalm llvm uvicorn python-fastapi python-kivy pandoc-cli nmap kdenlive wol just pacman-contrib lm_sensors wlsunset jupyterlab-widgets azure-cli kubectl helm gns3-gui gns3-server glab python-httpx2 networkmanager-openconnect github-cli zram-generator earlyoom systembus-notify stress-ng $ARCH_PKGS"
+readonly MAIN_PKGS="xorg-server neovim ranger xournalpp ffmpeg sxiv arandr man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse xclip noto-fonts-emoji imagemagick gimp xorg-setxkbmap wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv xorg-xinput cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions npm fzf unclutter mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript xorg-xrandr webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei hypridle texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit python-pandas python-pylatexenc pyright python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn plocate fastfetch sqlx-cli biber texlive-langgerman wget docker docker-compose docker-buildx gnome-connections python-aiohttp ansible mariadb-clients psalm llvm uvicorn python-fastapi python-kivy pandoc-cli nmap kdenlive wol just pacman-contrib lm_sensors wlsunset jupyterlab-widgets azure-cli kubectl helm gns3-gui gns3-server glab python-httpx2 networkmanager-openconnect github-cli zram-generator earlyoom systembus-notify stress-ng $ARCH_PKGS"
 
 readonly AUR_PKGS="fluffychat-color-emoji openconnect-ms-auth redshift dashbinsh cspell-lsp doasedit-alternative nodejs-cspell nvim-lazy lexend-fonts-git xwaylandvideobridge jdtls gradle-autowrap localsend-bin python-sklearn-onnx kotlin-language-server-bin ktlint-compose-rules ktlint pup beekeeper-studio-bin python-pyotp python-jupytext python-selenium wireshark-qt python-jupytext marksman-git python-openstackclient $ARCH_AUR_PKGS"
 
@@ -205,11 +205,16 @@ ensure_user_is_part_of_wireshark_group() {
 
 ensure_history_file_exists() {
     log_info "Ensure history file exists"
-    if ! [ -f /home/"$username"/.cache/zsh/history ]; then
+    local history_dir="/home/$username/.cache/zsh"
+    local history_file="$history_dir/history"
+    if ! [ -f "$history_file" ] ||
+        [ "$(stat -c "%U" "$history_dir")" != "$username" ] ||
+        [ "$(stat -c "%U" "$history_file")" != "$username" ]; then
         echo -e "\e[0;30;34mEnsuring initial zsh history file exists ...\e[0m"
-        mkdir -vp /home/"$username"/.cache/zsh
-        touch /home/"$username"/.cache/zsh/history
-        log_changed "Created history file"
+        install -d -o "$username" -g users "$history_dir" || error_exit "Failed to create $history_dir"
+        touch "$history_file" || error_exit "Failed to create $history_file"
+        chown "$username:users" "$history_file" || error_exit "Failed to chown $history_file"
+        log_changed "Created history file owned by $username"
     else
         log_ok "history file is already present"
     fi
@@ -800,9 +805,9 @@ ensure_dotfiles_are_fetched_and_applied() {
     if [ ! -d /home/"$username"/dox/src/dotfiles ]; then
         echo -e "\e[0;30;34mFetching dotfiles ...\e[0m"
         cd_into /home/"$username"/dox/src
-        git clone https://git.noahvogt.com/noah/dotfiles.git || error_exit "Failed to clone dotfiles git repository"
-        cd_into /home/"$username"/dox/src/dotfiles
         setup_temporary_doas
+        doas -u "$username" git clone https://git.noahvogt.com/noah/dotfiles.git || error_exit "Failed to clone dotfiles git repository"
+        cd_into /home/"$username"/dox/src/dotfiles
         doas -u "$username" /home/"$username"/dox/src/dotfiles/apply-dotfiles
         log_changed "dotfiles were fetched and applied successfully"
     else
@@ -834,6 +839,9 @@ EOF
 ensure_pkgs_installed "$BASE_PKGS" "some basic" "pacman"
 
 ensure_user_selected
+# the temporary doas config grants passwordless root to wheel, so restore the
+# final one even if a step exits early, until it is set regularly below
+trap setup_final_doas EXIT
 ensure_needed_dirs_created
 ensure_user_is_part_of_needed_groups
 ensure_sudo_is_symlinked_to_doas
@@ -856,6 +864,7 @@ ensure_global_zsh_installed
 ensure_history_file_exists
 ensure_login_shell_is_zsh
 setup_final_doas
+trap - EXIT
 ensure_bluetooth_service_enabled
 ensure_docker_socket_enabled
 ensure_networkd_disabled_for_networkmanager
