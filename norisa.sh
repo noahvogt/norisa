@@ -273,8 +273,15 @@ ensure_needed_dirs_created() {
         "/home/$username/.cache"
         "/home/$username/dox/src"
     )
-    if ! chown -v "$username:users" "${needed_dirs[@]}" >/dev/null; then
-        mkdir -Rvp "${needed_dirs[@]}"
+    local dirs_to_fix=()
+    for dir in "${needed_dirs[@]}"; do
+        if [ ! -d "$dir" ] || [ "$(stat -c "%U" "$dir")" != "$username" ]; then
+            dirs_to_fix+=("$dir")
+        fi
+    done
+    if [ ${#dirs_to_fix[@]} -gt 0 ]; then
+        mkdir -vp "${dirs_to_fix[@]}" || error_exit "Failed to create needed ~/ directories"
+        chown "$username:users" "${dirs_to_fix[@]}" || error_exit "Failed to chown needed ~/ directories"
         log_changed "Created needed ~/ directories"
     else
         log_ok "Needed ~/ directories are already present"
@@ -508,8 +515,8 @@ ensure_history_file_not_present() {
 
 cleanup_home() {
     log_info "Cleaning up \$HOME"
-    local bash_history="$username/.bash_history"
-    local less_history="$username/.lesshst"
+    local bash_history="/home/$username/.bash_history"
+    local less_history="/home/$username/.lesshst"
     ensure_history_file_not_present "$bash_history" bash
     ensure_history_file_not_present "$less_history" less
 }
