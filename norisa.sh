@@ -728,6 +728,33 @@ ensure_tlp_enabled_on_laptops() {
     fi
 }
 
+# the apple smc only supports stopping at 80% (resuming at 75%) or 100%.
+# asahi-scripts restores the value stored in the udev conf at boot and stores
+# it again whenever it is changed through sysfs
+ensure_charge_limit_set_on_apple_silicon() {
+    local battery="/sys/class/power_supply/macsmc-battery"
+    if [ ! -d "$battery" ]; then
+        return
+    fi
+    log_info "Ensuring the battery charge limit is set to 80%"
+    local conf_file="/etc/udev/macsmc-battery.conf"
+    local content="CHARGE_CONTROL_END_THRESHOLD=80"
+    local changed=false
+    if [ "$(cat "$conf_file" 2>/dev/null)" != "$content" ]; then
+        printf "%s\n" "$content" >"$conf_file" || error_exit "Failed to write $conf_file"
+        changed=true
+    fi
+    if [ "$(cat "$battery/charge_control_end_threshold")" != "80" ]; then
+        echo 80 >"$battery/charge_control_end_threshold" || error_exit "Failed to set the charge limit"
+        changed=true
+    fi
+    if [ "$changed" = true ]; then
+        log_changed "Set the battery charge limit to 80%"
+    else
+        log_ok "Battery charge limit is already set to 80%"
+    fi
+}
+
 ensure_php_extensions_enabled() {
     log_info "Ensuring required PHP extensions are enabled"
     local changed=false
@@ -880,6 +907,7 @@ ensure_journald_size_limited
 ensure_smartd_configured
 ensure_updatedb_prunenames_set
 ensure_tlp_enabled_on_laptops
+ensure_charge_limit_set_on_apple_silicon
 ensure_dns_priority_in_nsswitch
 ensure_hyprland_systemd_target_created
 if [ "$IS_APPLE_M1" = "yes" ]; then
