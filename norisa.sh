@@ -45,7 +45,7 @@ if [ "$ARCH" = "x86_64" ]; then
 else
     # Asahi/ARM specific or generic alternatives
     ARCH_PKGS="chromium"
-    ARCH_AUR_PKGS="unifetch shellcheck-bin yt-dlp-git logseq-desktop-bin code2prompt wlogout"
+    ARCH_AUR_PKGS="unifetch shellcheck-bin yt-dlp-nightly-bin logseq-desktop-bin code2prompt wlogout"
 
     # Apple M1 family (t8103: M1, t600x: M1 Pro/Max/Ultra)
     if tr '\0' '\n' </proc/device-tree/compatible 2>/dev/null | grep -qE '^apple,(t8103|t600[0-2])$'; then
