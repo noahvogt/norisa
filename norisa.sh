@@ -100,6 +100,7 @@ cd_into() {
     cd "$1" || cd_error_exit "$1"
 }
 
+# shellcheck disable=SC2086 # package lists and the install command are split on purpose
 ensure_pkgs_installed() {
     MISSING_PKGS="$(pacman -T $1)"
     log_info "Ensuring $2 packages are installed"
@@ -173,7 +174,7 @@ choose_user() {
     while true; do
         echo -e "\e[0;30;42m Enter in your chosen user \e[0m"
         read -rp " >>> " username
-        ls /home/ | grep -q "^$username$" && break
+        id -u "$username" >/dev/null 2>&1 && [ -d "/home/$username" ] && break
     done
 }
 
