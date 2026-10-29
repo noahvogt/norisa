@@ -755,6 +755,32 @@ ensure_charge_limit_set_on_apple_silicon() {
     fi
 }
 
+# swap left option and command on apple keyboards so they send the same codes as
+# a pc keyboard. needed so the global altwin:swap_lalt_lwin in my hyprland config
+# does not need per-device config in hyprland. this should also make switching
+# to another window manager easier.
+ensure_apple_keyboard_option_command_swapped() {
+    log_info "Ensuring option and command are swapped on apple keyboards"
+    local conf_file="/etc/modprobe.d/hid_apple.conf"
+    local param="/sys/module/hid_apple/parameters/swap_opt_cmd"
+    local content="options hid_apple swap_opt_cmd=2"
+    local changed=false
+    if [ "$(cat "$conf_file" 2>/dev/null)" != "$content" ]; then
+        printf "%s\n" "$content" >"$conf_file" || error_exit "Failed to write $conf_file"
+        mkinitcpio -P || error_exit "Failed to regenerate the initramfs"
+        changed=true
+    fi
+    if [ -f "$param" ] && [ "$(cat "$param")" != "2" ]; then
+        echo 2 >"$param" || error_exit "Failed to set swap_opt_cmd"
+        changed=true
+    fi
+    if [ "$changed" = true ]; then
+        log_changed "Swapped option and command on apple keyboards"
+    else
+        log_ok "Option and command are already swapped on apple keyboards"
+    fi
+}
+
 ensure_php_extensions_enabled() {
     log_info "Ensuring required PHP extensions are enabled"
     local changed=false
@@ -908,6 +934,7 @@ ensure_smartd_configured
 ensure_updatedb_prunenames_set
 ensure_tlp_enabled_on_laptops
 ensure_charge_limit_set_on_apple_silicon
+ensure_apple_keyboard_option_command_swapped
 ensure_dns_priority_in_nsswitch
 ensure_hyprland_systemd_target_created
 if [ "$IS_APPLE_M1" = "yes" ]; then
