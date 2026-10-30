@@ -1,0 +1,41 @@
+# run by prek, set up once per clone with `prek install`
+default_install_hook_types: [pre-commit, commit-msg]
+# file hooks would otherwise also run on the commit message
+default_stages: [pre-commit]
+
+repos:
+  # rust implementations shipped with prek, no python needed
+  - repo: builtin
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: check-yaml
+
+  # shellcheck and shfmt are installed by norisa.sh itself, so use those
+  # instead of letting prek download its own copies
+  - repo: local
+    hooks:
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck
+        language: system
+        types: [shell]
+      - id: shfmt
+        name: shfmt
+        entry: shfmt -w
+        language: system
+        types: [shell]
+      # unscoped, lowercase conventional commits with the types used in this
+      # repo. git's own merge, revert, fixup, squash and amend subjects pass
+      - id: conventional-commit-msg
+        name: conventional commit message
+        language: system
+        stages: [commit-msg]
+        entry: >-
+          sh -c 'subject=$(sed -e "/^#/d" -e "/^[[:space:]]*$/d" "$1" | head -n 1);
+          printf "%s\n" "$subject" | grep -qE "^((feat|fix|chore|docs|refactor)!?: [a-z0-9]|Merge |Revert \"|(fixup|squash|amend)! )" && exit 0;
+          echo "invalid subject: $subject" >&2;
+          echo "expected <type>[!]: <lowercase description>, type is one of feat fix chore docs refactor" >&2;
+          exit 1'
+          commit-msg

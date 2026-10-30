@@ -31,7 +31,11 @@ So the two repos depend on each other:
   New steps follow that pattern and get called from the list at the bottom of the file.
 * Packages go in `BASE_PKGS`, `MAIN_PKGS` or `AUR_PKGS`; architecture-specific ones in
   `ARCH_PKGS`/`ARCH_AUR_PKGS` inside the `uname -m` branch (and the Apple M1 check).
-* Check scripts with `shellcheck` and format with `shfmt`.
+* Check scripts with `shellcheck` and format with `shfmt` (settings in `.editorconfig`).
+  The prek hooks in `.pre-commit-config.yaml` enforce this, fix missing final newlines
+  and trailing whitespace, and check the commit message format. Run
+  `prek run --all-files` after a change. The hooks only run on commit after
+  `prek install`, which is needed once per clone.
 * Never run `arch.sh`, `chroot.sh` or `norisa.sh` yourself: they modify the system as
   root, and `arch.sh` wipes disks.
 
@@ -39,6 +43,6 @@ So the two repos depend on each other:
 
 * **NEVER commit or push.** Leave all git history operations to the user.
 * When a change is done, suggest a commit message following Conventional Commits,
-  **unscoped** (`feat!: ...`, `feat: ...`, `fix: ...`, `chore: ...`, `doc: ...`, `refactor: ...`),
+  **unscoped** (`feat!: ...`, `feat: ...`, `fix: ...`, `chore: ...`, `docs: ...`, `refactor: ...`),
   lowercase, imperative, matching `git log`. If the change spans both repos, suggest
   one message per repo.
