@@ -26,7 +26,11 @@ read -rp "Press any key to continue"
 
 dialog --no-cancel --inputbox "Enter the drive you want do install Arch on." 10 60 2>drive
 
-dialog --defaultno --title "Time Zone select" --yesno "Do you want use the default time zone(Europe/Zurich)?.\n\nPress no for select your own time zone" 10 60 && echo "Europe/Zurich" >tz.tmp || tzselect >tz.tmp
+if dialog --defaultno --title "Time Zone select" --yesno "Do you want use the default time zone(Europe/Zurich)?.\n\nPress no for select your own time zone" 10 60; then
+    echo "Europe/Zurich" >tz.tmp
+else
+    tzselect >tz.tmp
+fi
 
 dialog --no-cancel --inputbox "Enter swapsize in gb (only type in numbers)." 10 60 2>swapsize
 
@@ -41,7 +45,6 @@ timedatectl set-ntp true
 if [ "$EFI" = "yes" ]; then
     if [ "$AES_NI" = "yes" ]; then
         UEFI_LETTER="1"
-        SWAP_LETTER="2"
         ROOT_LETTER="3"
         cat <<EOF | fdisk -W always /dev/"${DRIVE}"
 g
@@ -66,7 +69,6 @@ w
 EOF
     else
         UEFI_LETTER="1"
-        SWAP_LETTER="2"
         BOOT_LETTER="3"
         ROOT_LETTER="4"
         cat <<EOF | fdisk -W always /dev/"${DRIVE}"
@@ -97,7 +99,6 @@ EOF
     fi
 else
     if [ "$AES_NI" = "yes" ]; then
-        SWAP_LETTER="1"
         ROOT_LETTER="2"
         cat <<EOF | fdisk -W always /dev/"${DRIVE}"
 o
@@ -118,7 +119,6 @@ a
 w
 EOF
     else
-        SWAP_LETTER="1"
         BOOT_LETTER="2"
         ROOT_LETTER="3"
         cat <<EOF | fdisk -W always /dev/"${DRIVE}"
