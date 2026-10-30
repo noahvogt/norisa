@@ -6,10 +6,15 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-# also read by shfmt
 [*.sh]
 indent_style = space
 indent_size = 4
+
+# for shfmt: matches shell scripts by shebang, also those without a .sh extension
+[[shell]]
+indent_style = space
+indent_size = 4
+switch_case_indent = true
 
 [*.{yml,yaml}]
 indent_style = space
