@@ -830,16 +830,16 @@ ensure_dns_priority_in_nsswitch() {
     fi
 }
 
-ensure_libva_driver_set_to_v4l2_request() {
-    log_info "Ensuring LIBVA_DRIVER_NAME=v4l2_request in /etc/environment"
-    if grep -q "^LIBVA_DRIVER_NAME=v4l2_request$" /etc/environment; then
-        log_ok "LIBVA_DRIVER_NAME is already set to v4l2_request"
+ensure_libva_driver_set_to_asahi() {
+    log_info "Ensuring LIBVA_DRIVER_NAME=asahi in /etc/environment"
+    if grep -q "^LIBVA_DRIVER_NAME=asahi$" /etc/environment; then
+        log_ok "LIBVA_DRIVER_NAME is already set to asahi"
     elif grep -q "^LIBVA_DRIVER_NAME=" /etc/environment; then
-        sed -i 's/^LIBVA_DRIVER_NAME=.*/LIBVA_DRIVER_NAME=v4l2_request/' /etc/environment || error_exit "Failed to update LIBVA_DRIVER_NAME in /etc/environment"
-        log_changed "Changed LIBVA_DRIVER_NAME to v4l2_request in /etc/environment"
+        sed -i 's/^LIBVA_DRIVER_NAME=.*/LIBVA_DRIVER_NAME=asahi/' /etc/environment || error_exit "Failed to update LIBVA_DRIVER_NAME in /etc/environment"
+        log_changed "Changed LIBVA_DRIVER_NAME to asahi in /etc/environment"
     else
-        echo "LIBVA_DRIVER_NAME=v4l2_request" >>/etc/environment || error_exit "Failed to add LIBVA_DRIVER_NAME to /etc/environment"
-        log_changed "Added LIBVA_DRIVER_NAME=v4l2_request to /etc/environment"
+        echo "LIBVA_DRIVER_NAME=asahi" >>/etc/environment || error_exit "Failed to add LIBVA_DRIVER_NAME to /etc/environment"
+        log_changed "Added LIBVA_DRIVER_NAME=asahi to /etc/environment"
     fi
 }
 
@@ -982,7 +982,7 @@ ensure_apple_keyboard_option_command_swapped
 ensure_dns_priority_in_nsswitch
 ensure_hyprland_systemd_target_created
 if [ "$IS_APPLE_M1" = "yes" ]; then
-    ensure_libva_driver_set_to_v4l2_request
+    ensure_libva_driver_set_to_asahi
     ensure_mpv_uses_opengl
 fi
 cleanup_home
