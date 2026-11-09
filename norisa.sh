@@ -7,7 +7,30 @@
 # - ~30 GB of free disk space
 # working 1.) base 2.) linux packages
 
-if [ "$EUID" -ne 0 ]; then
+usage() {
+    echo "Usage: norisa.sh [--report]"
+    echo "  (no option)  provision this machine, must be run as root"
+    echo "  --report     only list explicitly installed packages missing from the"
+    echo "               package lists in this script (drift), changes nothing"
+}
+
+REPORT_ONLY="no"
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --report) REPORT_ONLY="yes" ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        *)
+            usage >&2
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+if [ "$REPORT_ONLY" = "no" ] && [ "$EUID" -ne 0 ]; then
     echo "norisa.sh must be run as root" >&2
     exit 1
 fi
@@ -28,7 +51,8 @@ if [ "$ARCH" = "x86_64" ]; then
         GAMING_WANTED=$(grep "^gaming=" /etc/norisa | cut -d'=' -f2)
     fi
 
-    if [ -z "$GAMING_WANTED" ]; then
+    # --report changes nothing, so it does not ask and treats an unset choice as no
+    if [ -z "$GAMING_WANTED" ] && [ "$REPORT_ONLY" = "no" ]; then
         echo -e "\e[0;30;42m Do you want to install gaming packages (Steam, multilib, etc.)? [y/n] \e[0m"
         read -rp " >>> " want_gaming
         if [[ "$want_gaming" =~ ^[yY]$ ]]; then
@@ -58,6 +82,10 @@ fi
 readonly MAIN_PKGS="neovim ranger xournalpp ffmpeg man-db brightnessctl unzip python mupdf-gl mediainfo highlight pipewire pipewire-pulse pipewire-alsa pipewire-audio wireplumber pulsemixer pamixer ttf-linux-libertine calcurse noto-fonts-emoji imagemagick gimp wavemon dash htop wireless_tools alsa-utils acpi zip libreoffice-fresh nm-connection-editor dunst libnotify dosfstools mpv cpupower zsh zsh-syntax-highlighting newsboat pcmanfm openbsd-netcat powertop mupdf-tools stow zsh-autosuggestions atuin npm fzf mpd mpc ncmpcpp pavucontrol strawberry smartmontools firefox python-pynvim python-pylint tesseract-data-deu tesseract-data-eng keepassxc img2pdf dust ctags python-wand python-termcolor python-black jdk-openjdk ripgrep lf ttf-jetbrains-mono-nerd foliate coreutils curl fish foot fuzzel gjs gnome-bluetooth-3.0 gnome-control-center gnome-keyring gobject-introspection grim gtk3 gtk-layer-shell libdbusmenu-gtk3 meson nlohmann-json plasma-browser-integration playerctl polkit-gnome python-pywal sassc slurp swayidle typescript webp-pixbuf-loader yad hyprland python-poetry python-build python-pillow ttf-space-mono-nerd kitty shfmt ruff luarocks rust-analyzer hyprland-guiutils waybar socat hyprlock clang swaync bat wl-clipboard syncthing python-debugpy awww kitty tokei hypridle texlive-basic texlive-bibtexextra texlive-binextra texlive-context texlive-fontsextra texlive-fontsrecommended texlive-fontutils texlive-formatsextra texlive-games texlive-humanities texlive-latex texlive-latexextra texlive-latexrecommended texlive-luatex texlive-mathscience texlive-metapost texlive-music texlive-pictures texlive-plaingeneric texlive-pstricks texlive-publishers texlive-xetex libva-utils blueman woff2-font-awesome bind qt5-wayland qt6-wayland pre-commit prek python-pandas python-pylatexenc pyright bash-language-server python-beautifulsoup4 tree-sitter-cli jupyterlab python-httplib2 jdk11-openjdk zathura-pdf-mupdf imv rclone openconnect python-evdev tree python-seaborn plocate fastfetch sqlx-cli biber texlive-langgerman wget docker docker-compose docker-buildx gnome-connections python-aiohttp ansible mariadb-clients psalm llvm uvicorn python-fastapi python-kivy pandoc-cli nmap kdenlive wol just pacman-contrib lm_sensors wlsunset jupyterlab-widgets azure-cli kubectl helm gns3-gui gns3-server glab python-httpx2 networkmanager-openconnect github-cli zram-generator earlyoom systembus-notify stress-ng android-tools wayvnc freerdp $ARCH_PKGS"
 
 readonly AUR_PKGS="fluffychat-color-emoji openconnect-ms-auth redshift dashbinsh cspell-lsp doasedit-alternative nodejs-cspell nvim-lazy lexend-fonts-git xwaylandvideobridge jdtls gradle-autowrap localsend-bin python-sklearn-onnx kotlin-lsp-bin vscode-langservers-extracted ktlint-compose-rules ktlint pup beekeeper-studio-bin python-pyotp python-jupytext python-selenium wireshark-qt python-jupytext marksman-git python-openstackclient hypr-rdp $ARCH_AUR_PKGS"
+
+# installed by arch.sh, chroot.sh and the chaotic-aur/paru steps instead of the lists
+# above, only used by report_unlisted_pkgs
+readonly BOOTSTRAP_PKGS="base linux linux-firmware cryptsetup networkmanager grub efibootmgr chaotic-keyring chaotic-mirrorlist paru"
 
 readonly C_RESET='\e[0m'
 readonly C_INFO='\e[1;36m'   # Cyan
@@ -931,6 +959,35 @@ EOF
         log_ok "hyprland-session.target already exists"
     fi
 }
+
+# Drift detection for --report: explicitly installed packages that are neither in
+# a package list nor provided by a listed one (e.g. installed by hand with pacman -S)
+report_unlisted_pkgs() {
+    command -v expac >/dev/null || error_exit "expac is needed for --report, install it first"
+    log_info "Checking for explicitly installed packages not listed in norisa"
+    local listed=" $BASE_PKGS $MAIN_PKGS $AUR_PKGS $BOOTSTRAP_PKGS "
+    local unlisted=() name provides provided
+    while IFS='|' read -r name provides; do
+        case "$listed" in *" $name "*) continue ;; esac
+        for provided in $provides; do
+            case "$listed" in *" ${provided%%=*} "*) continue 2 ;; esac
+        done
+        unlisted+=("$name")
+    done < <(pacman -Qqe | expac -Q -l ' ' '%n|%S' -)
+
+    if [ "${#unlisted[@]}" -eq 0 ]; then
+        log_ok "All explicitly installed packages are listed"
+        return
+    fi
+    log_info "${#unlisted[@]} explicitly installed packages are not listed in norisa:"
+    printf '%s\n' "${unlisted[@]}" | column
+    log_info "Add them to a package list, remove them (pacman -Rns) or mark them as dependencies (pacman -D --asdeps)"
+}
+
+if [ "$REPORT_ONLY" = "yes" ]; then
+    report_unlisted_pkgs
+    exit 0
+fi
 
 ensure_pkgs_installed "$BASE_PKGS" "some basic" "pacman"
 
